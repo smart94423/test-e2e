@@ -27,7 +27,7 @@ const config: Config.InitialOptions = {
   },
   watchman: false,
   testMatch: getTestMatch(),
-  rootDir: `${__dirname}/../..`,
+  rootDir: process.cwd(),
   testRunner: 'jest-jasmine2',
   silent: false,
 }
