@@ -1,0 +1,24 @@
+{
+  "name": "@brillout/test-runner",
+  "version": "0.0.1",
+  "bin": "./bin.js",
+  "scripts": {
+    "test:jest": "jest --config=./jest.config.ts --runInBand",
+    "test:types": "ts-node ./test-types.ts"
+  },
+  "dependencies": {
+    "@brillout/part-regex": "^0.1.2",
+    "@types/jest": "^27.4.0",
+    "@types/node": "^15.6.1",
+    "@types/node-fetch": "^2.5.12",
+    "jest": "^27.5.1",
+    "jest-playwright-preset": "^1.7.0",
+    "kolorist": "^1.4.1",
+    "node-fetch": "^2.6.1",
+    "playwright-chromium": "^1.22.2",
+    "strip-ansi": "^6.0.1",
+    "ts-jest": "^27.1.3",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.5.4"
+  }
+}
