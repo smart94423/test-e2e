@@ -1,9 +1,14 @@
 {
   "compilerOptions": {
+    "outDir": "./dist/",
     "target": "ES2020",
-    "module": "CommonJS",
-    "noImplicitAny": true,
+    "module": "ES2020",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
-  }
+    "strict": true,
+    "declaration": true
+  },
+  "rootDir": "./src/",
+  "include": ["src/**/*"]
 }

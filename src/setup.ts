@@ -53,6 +53,7 @@ function run(
     cwd?: string
   } = {},
 ) {
+  console.log('23')
   additionalTimeout += serverIsReadyDelay
 
   const testContext = {
@@ -493,6 +494,7 @@ async function fetch(...args: Parameters<typeof fetch_>) {
     Logs.add({
       logType: 'Connection Error',
       logText: `Couldn't connect to \`${args[0]}\`. Args: \`${JSON.stringify(args.slice(1))}\`. Err: \`${
+        // @ts-ignore
         err.message
       }\``,
       testContext: null,
