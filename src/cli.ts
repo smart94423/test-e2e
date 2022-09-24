@@ -13,7 +13,7 @@ async function cli() {
   const testFiles = (
     await glob(
       ['**/*.test.ts'], // Unit tests `**/*.spec.*` are handled by Vitesse
-      { ignore: ['**/node_modules/**', '**/.git/**'], cwd, dot: true }
+      { ignore: ['**/node_modules/**', '**/.git/**'], cwd, dot: true },
     )
   )
     .map((filePathRelative) => path.join(cwd, filePathRelative))
@@ -43,6 +43,6 @@ async function buildTs(entry: string, outfile: string) {
     target: 'es2020',
     bundle: true,
     external: ['./node_modules/*'],
-    minify: false
+    minify: false,
   })
 }

@@ -53,7 +53,6 @@ function run(
     cwd?: string
   } = {},
 ) {
-
   additionalTimeout += serverIsReadyDelay
 
   const testInfo = getTestInfo()

@@ -9,6 +9,6 @@ function test(testDesc: string, testFn: () => void | Promise<void>) {
   testInfo.tests = testInfo.tests ?? []
   testInfo.tests.push({
     testDesc,
-    testFn
+    testFn,
   })
 }
