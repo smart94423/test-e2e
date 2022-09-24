@@ -1,0 +1,29 @@
+export { getTestInfo }
+export { setTestInfo }
+
+import type { Page } from 'playwright-chromium'
+import assert from 'assert'
+
+type TestInfo = {
+  testFile: string
+  tests?: {
+    testDesc: string
+    testFn: Function
+  }[]
+  testCmd?: string
+  testTiemout?: number
+  hasStartedRunning?: boolean
+  beforeAll?: () => Promise<void>
+  afterAll?: () => Promise<void>
+  afterEach?: () => void | Promise<void>
+  page?: Page
+}
+let testInfo: null | TestInfo = null
+
+function getTestInfo() {
+  assert(testInfo)
+  return testInfo
+}
+function setTestInfo(testInfo_: null | TestInfo) {
+  testInfo = testInfo_
+}

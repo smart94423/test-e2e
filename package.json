@@ -15,6 +15,7 @@
   "dependencies": {
     "@brillout/part-regex": "^0.1.2",
     "@jest/types": "^29.0.3",
+    "@types/chai": "^4.3.3",
     "@types/jest": "^27.4.0",
     "@types/node": "^15.6.1",
     "@types/node-fetch": "^2.5.12",

@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@brillout/part-regex': ^0.1.2
   '@jest/types': ^29.0.3
+  '@types/chai': ^4.3.3
   '@types/jest': ^27.4.0
   '@types/node': ^15.6.1
   '@types/node-fetch': ^2.5.12
@@ -23,6 +24,7 @@ specifiers:
 dependencies:
   '@brillout/part-regex': 0.1.2
   '@jest/types': 29.0.3
+  '@types/chai': 4.3.3
   '@types/jest': 27.5.2
   '@types/node': 15.14.9
   '@types/node-fetch': 2.6.2
@@ -961,6 +963,10 @@ packages:
     resolution: {integrity: sha512-FSdLaZh2UxaMuLp9lixWaHq/golWTRWOnRsAXzDTDSDOQLuZb1nsdCt6pJSPWSEQt2eFZ2YVk3oYhn+1kLMeMA==}
     dependencies:
       '@babel/types': 7.19.0
+    dev: false
+
+  /@types/chai/4.3.3:
+    resolution: {integrity: sha512-hC7OMnszpxhZPduX+m+nrx+uFoLkWOMiR4oa/AZF3MuSETYTZmFfJAHqZEM8MVlvfG7BEUcgvtwoCTxBp6hm3g==}
     dev: false
 
   /@types/graceful-fs/4.1.5:

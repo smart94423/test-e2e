@@ -1,16 +1,16 @@
 import { spawn } from 'child_process'
-import { ChildProcessWithoutNullStreams } from 'child_process'
+import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname, resolve } from 'path'
-import { ConsoleMessage, Page } from 'playwright-chromium'
-import { getTestFilePath, runCommand, sleep } from './utils'
+import type { ConsoleMessage } from 'playwright-chromium'
+import { runCommand, sleep } from './utils'
 import fetch_ from 'node-fetch'
 import assert from 'assert'
 import { Logs } from './Logs'
 import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
+import { getTestInfo } from './getTestInfo'
 
 export { partRegex } from '@brillout/part-regex'
-export const page: Page = (global as any).page as Page
 export { autoRetry }
 export { fetchHtml }
 export { fetch }
@@ -53,8 +53,20 @@ function run(
     cwd?: string
   } = {},
 ) {
-  console.log('23')
+
   additionalTimeout += serverIsReadyDelay
+
+  const testInfo = getTestInfo()
+  testInfo.testCmd = cmd
+  testInfo.testTiemout = TIMEOUT_JEST + additionalTimeout
+
+  const { page } = testInfo
+  // Set by `./runTests`
+  assert(page)
+
+  if (debug) {
+    Logs.flushEagerly = true
+  }
 
   const testContext = {
     cmd,
@@ -67,16 +79,10 @@ function run(
     debug,
   }
 
-  if (debug) {
-    Logs.flushEagerly = true
-  }
-
   logJestStep('run start')
 
-  jest.setTimeout(TIMEOUT_JEST + additionalTimeout)
-
   let runProcess: RunProcess | null = null
-  beforeAll(async () => {
+  testInfo.beforeAll = async () => {
     logJestStep('beforeAll start')
 
     // https://stackoverflow.com/questions/42000137/check-if-test-failed-in-aftereach-of-jest/62557472#62557472
@@ -104,15 +110,15 @@ function run(
     */
 
     logJestStep('beforeAll end')
-  })
-  afterEach(() => {
+  }
+  testInfo.afterEach = () => {
     if (!testHasFailed()) {
       editFileAssertReverted()
     } else {
       editFileRevert()
     }
-  })
-  afterAll(async () => {
+  }
+  testInfo.afterAll = async () => {
     logJestStep('afterAll start')
 
     page.off('console', onConsole)
@@ -135,9 +141,9 @@ function run(
     expect(browserErrors).toEqual([])
 
     logJestStep('afterAll end')
-  })
+  }
 
-  return
+  return { page }
 
   // Also called when the page throws an error or a warning
   function onConsole(msg: ConsoleMessage) {
@@ -549,14 +555,14 @@ function isGithubAction() {
 }
 
 function getCwd() {
-  const testFilePath = getTestFilePath()
-  const cwd = dirname(testFilePath)
+  const { testFile } = getTestInfo()
+  const cwd = dirname(testFile)
   return cwd
 }
 function getTestName() {
-  const testFilePath = getTestFilePath()
-  const pathRelative = removeRootDir(testFilePath)
-  if (testFilePath.includes('examples')) {
+  const { testFile } = getTestInfo()
+  const pathRelative = removeRootDir(testFile)
+  if (testFile.includes('examples')) {
     return dirname(pathRelative)
   } else {
     return pathRelative
