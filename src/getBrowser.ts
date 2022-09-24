@@ -6,7 +6,7 @@ import { logProgress } from './logProgress'
 let browser: Browser | undefined
 async function getBrowser() {
   if (!browser) {
-    const done = logProgress('Launch Browser')
+    const done = logProgress('Launch Browser', true)
     browser = await chromium.launch({ headless: true })
     done()
   }

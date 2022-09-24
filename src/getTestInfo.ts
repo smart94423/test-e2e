@@ -12,11 +12,11 @@ type TestInfo = {
     testFn: Function
   }[]
   testCmd?: string
-  testTiemout?: number
+  testTimeout?: number
   hasStartedRunning?: boolean
   beforeAll?: () => Promise<void>
   afterAll?: () => Promise<void>
-  afterEach?: () => void | Promise<void>
+  afterEach?: (err?: unknown) => void | Promise<void>
   page?: Page
 }
 let testInfo: null | TestInfo = null

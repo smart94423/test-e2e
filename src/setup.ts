@@ -9,7 +9,6 @@ import { Logs } from './Logs'
 import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getTestInfo } from './getTestInfo'
-import { getBrowser } from './getBrowser'
 import { page } from './page'
 import { expect } from './expect'
 import { logProgress } from './logProgress'
@@ -61,7 +60,7 @@ function run(
 
   const testInfo = getTestInfo()
   testInfo.testCmd = cmd
-  testInfo.testTiemout = TIMEOUT_JEST + additionalTimeout
+  testInfo.testTimeout = TIMEOUT_JEST + additionalTimeout
 
   /*
   const browser = await getBrowser()
@@ -115,12 +114,23 @@ function run(
 
     logJestStep('beforeAll end')
   }
-  testInfo.afterEach = () => {
-    if (!testHasFailed()) {
+  testInfo.afterEach = (err: unknown) => {
+    if (!err) {
       editFileAssertReverted()
     } else {
       editFileRevert()
+      Logs.flush()
+      throw err
     }
+
+    const browserErrors = Logs.getBrowserErrors()
+    if (browserErrors.length > 0) {
+      Logs.flush()
+      // Display all browser errors
+      expect(browserErrors).deep.equal([])
+      assert(false)
+    }
+    Logs.clear()
   }
   testInfo.afterAll = async () => {
     logJestStep('afterAll start')
@@ -128,21 +138,10 @@ function run(
     page.off('console', onConsole)
     page.off('pageerror', onPageError)
 
-    const browserErrors = Logs.getBrowserErrors()
-    if (testHasFailed() || browserErrors.length > 0) {
-      Logs.flush()
-    }
-    Logs.clear()
-
-    await page.close() // See https://github.com/vitejs/vite/pull/3097
-
     // `runProcess` is `undefined` if `start()` failed.
     if (runProcess) {
       await runProcess.terminate('SIGINT')
     }
-
-    // Make Jest consider the test as failing
-    expect(browserErrors).deep.equal([])
 
     logJestStep('afterAll end')
   }
@@ -264,6 +263,8 @@ async function start(testContext: {
   }
   */
 
+  console.log()
+  console.log(testContext.testName)
   const done = logProgress(cmd)
   const { terminate } = await startScript(cmd, testContext, {
     onError(err) {
@@ -579,12 +580,4 @@ function removeRootDir(filePath: string) {
   const rootDir = resolve(__dirname, '../../')
   assert(filePath.startsWith(rootDir))
   return filePath.slice(rootDir.length)
-}
-
-function testHasFailed(): boolean {
-  return false
-  /*
-  const testFailed = (jasmine as any).currentTest.failedExpectations.length > 0
-  return testFailed
-  */
 }

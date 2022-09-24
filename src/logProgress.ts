@@ -1,16 +1,29 @@
 export { logProgress }
 
+import { getTestInfo } from './getTestInfo'
+
+const iconSuccess = '🟢'
 const iconPending = '🟠'
-const iconDone = '🟢'
 const iconFail = '🔴'
 
-function logProgress(text: string) {
-  process.stdout.write(iconPending + ' ' + text)
-  return (failed?: true) => {
+function logProgress(text: string, isSetup?: true) {
+  const prefix = getPrefix(isSetup)
+  process.stdout.write(`${prefix}${iconPending} ${text}`)
+  return (failed?: boolean) => {
     clear()
-    const icon = failed ? iconFail : iconDone
-    process.stdout.write(icon + ' ' + text + '\n')
+    const iconDone = failed ? iconFail : iconSuccess
+    process.stdout.write(`${prefix}${iconDone} ${text}\n`)
   }
+}
+
+function getPrefix(isSetup?: true) {
+  if (isSetup) {
+    return ''
+  }
+  if (!getTestInfo()) {
+    return ''
+  }
+  return ' | '
 }
 
 function clear() {
