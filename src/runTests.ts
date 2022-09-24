@@ -1,18 +1,15 @@
 export { runTests }
 
 import assert from 'assert'
+import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
-import { getBrowser } from './getBrowser'
 import { logProgress } from './logProgress'
 
-async function runTests() {
+async function runTests(browser: Browser) {
   const testInfo = getTestInfo()
 
-  //*
-  const browser = await getBrowser()
   const page = await browser.newPage()
   testInfo.page = page
-  //*/
 
   // Set by `test()`
   assert(testInfo.tests)
@@ -38,7 +35,7 @@ async function runTests() {
   }
 
   await testInfo.afterAll()
-  await browser.close()
+  await page.close()
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
