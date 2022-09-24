@@ -2,8 +2,11 @@ import glob from 'fast-glob'
 import esbuild from 'esbuild'
 import path from 'path'
 import assert from 'assert'
+import fs from 'fs'
 import { setTestInfo } from './getTestInfo'
 import { runTests } from './runTests'
+// @ts-ignore
+import 'source-map-support/register'
 
 const cwd = process.cwd()
 
@@ -22,13 +25,21 @@ async function cli() {
   for (const testFile of testFiles) {
     assert(testFile.endsWith('.ts'))
     const testFileJs = testFile.replace('.ts', '.mjs')
-    console.log(testFile)
     await buildTs(testFile, testFileJs)
-    console.log(testFileJs)
     setTestInfo({ testFile })
-    import(testFileJs)
+    await import(testFileJs)
+    /*
+    const exports = await import(testFileJs)
+    assert(Object.keys(exports).length===1)
+    const { testRun } = exports
+    assert(testRun)
+    setTestInfo({ testFile, testRun })
+    */
     await runTests()
     setTestInfo(null)
+    assert(testFileJs.endsWith('.mjs'))
+    fs.unlinkSync(`${testFileJs}`)
+    fs.unlinkSync(`${testFileJs}.map`)
   }
 }
 

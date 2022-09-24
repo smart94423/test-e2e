@@ -6,6 +6,7 @@ import assert from 'assert'
 
 type TestInfo = {
   testFile: string
+  // testRun: () => Promise<void>
   tests?: {
     testDesc: string
     testFn: Function

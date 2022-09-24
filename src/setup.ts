@@ -9,6 +9,10 @@ import { Logs } from './Logs'
 import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getTestInfo } from './getTestInfo'
+import { getBrowser } from './getBrowser'
+import { page } from './page'
+import { expect } from './expect'
+import { logProgress } from './logProgress'
 
 export { partRegex } from '@brillout/part-regex'
 export { autoRetry }
@@ -59,9 +63,15 @@ function run(
   testInfo.testCmd = cmd
   testInfo.testTiemout = TIMEOUT_JEST + additionalTimeout
 
+  /*
+  const browser = await getBrowser()
+  const page = await browser.newPage()
+  testInfo.page = page
+
   const { page } = testInfo
   // Set by `./runTests`
   assert(page)
+  */
 
   if (debug) {
     Logs.flushEagerly = true
@@ -83,11 +93,6 @@ function run(
   let runProcess: RunProcess | null = null
   testInfo.beforeAll = async () => {
     logJestStep('beforeAll start')
-
-    // https://stackoverflow.com/questions/42000137/check-if-test-failed-in-aftereach-of-jest/62557472#62557472
-    ;(jasmine as any).getEnv().addReporter({
-      specStarted: (result: unknown) => ((jasmine as any).currentTest = result),
-    })
 
     runProcess = await start(testContext)
     logJestStep('run done')
@@ -137,12 +142,13 @@ function run(
     }
 
     // Make Jest consider the test as failing
-    expect(browserErrors).toEqual([])
+    expect(browserErrors).deep.equal([])
 
     logJestStep('afterAll end')
   }
 
-  return { page }
+  // return { page }
+  return
 
   // Also called when the page throws an error or a warning
   function onConsole(msg: ConsoleMessage) {
@@ -249,10 +255,6 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const onError = (err: Error) => {
-    rejectServerStart(err as Error)
-  }
-
   /*
   if (prepare) {
     await startScript(prepare, testContext, {
@@ -262,8 +264,12 @@ async function start(testContext: {
   }
   */
 
+  const done = logProgress(cmd)
   const { terminate } = await startScript(cmd, testContext, {
-    onError,
+    onError(err) {
+      done(true)
+      rejectServerStart(err as Error)
+    },
     awaitTermination: false,
     onExit() {
       const exitIsExpected = hasStarted === true
@@ -281,6 +287,7 @@ async function start(testContext: {
         // Vite
         (text.includes('Local:') && text.includes('http://localhost:3000/'))
       if (isServerReady) {
+        done()
         assert(serverIsReadyDelay)
         await sleep(serverIsReadyDelay)
         resolveServerStart()
@@ -575,6 +582,9 @@ function removeRootDir(filePath: string) {
 }
 
 function testHasFailed(): boolean {
+  return false
+  /*
   const testFailed = (jasmine as any).currentTest.failedExpectations.length > 0
   return testFailed
+  */
 }

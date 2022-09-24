@@ -16,6 +16,7 @@ specifiers:
   kolorist: ^1.4.1
   node-fetch: ^2.6.1
   playwright-chromium: ^1.22.2
+  source-map-support: ^0.5.21
   strip-ansi: ^6.0.1
   ts-jest: ^27.1.3
   ts-node: ^9.1.1
@@ -37,6 +38,7 @@ dependencies:
   kolorist: 1.6.0
   node-fetch: 2.6.7
   playwright-chromium: 1.26.0
+  source-map-support: 0.5.21
   strip-ansi: 6.0.1
   ts-jest: 27.1.5_4v2uo34jewu2zub2ke2gj7pztq
   ts-node: 9.1.1_typescript@4.8.3

@@ -16,7 +16,8 @@ function editFile(filePathRelative: string, replacer: (fileContent: string) => s
     filesContentOriginal[filePath] = fileContent
   }
   const fileContentNew = replacer(fileContent)
-  expect(fileContentNew).not.toBe(fileContent)
+  // expect(fileContentNew).not.toBe(fileContent)
+  assert(fileContentNew === fileContent)
   fs.writeFileSync(filePath, fileContentNew)
 }
 
@@ -30,7 +31,8 @@ function editFileRevert() {
 function editFileAssertReverted() {
   const filesDirty = Object.keys(filesContentOriginal)
   try {
-    expect(filesDirty).toEqual([])
+    // expect(filesDirty).toEqual([])
+    assert(filesDirty.length === 0)
   } catch (err) {
     editFileRevert()
     throw err

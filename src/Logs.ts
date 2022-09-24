@@ -7,6 +7,7 @@ export const Logs = {
   flushEagerly: false,
 }
 
+import assert from 'assert'
 import { red, bold, blue } from 'kolorist'
 
 type LogType =
@@ -66,7 +67,8 @@ function expectBrowserError(browserLogFilter: (browserLog: LogEntry) => boolean)
     }
     return false
   })
-  expect(found).toBe(true)
+  //expect(found).toBe(true)
+  assert(found === true)
 }
 
 function getTimestamp() {
