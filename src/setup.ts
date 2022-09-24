@@ -10,7 +10,7 @@ import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getTestInfo } from './getTestInfo'
 import { page } from './page'
-import { expect } from './expect'
+import { expect } from './chai/expect'
 import { logProgress } from './logProgress'
 
 export { partRegex } from '@brillout/part-regex'
@@ -44,7 +44,6 @@ function run(
     serverIsReadyMessage,
     serverIsReadyDelay = 1000,
     debug = !!process.env.DEBUG,
-    // prepare,
     cwd,
   }: {
     //baseUrl?: string
@@ -52,7 +51,6 @@ function run(
     serverIsReadyMessage?: string
     serverIsReadyDelay?: number
     debug?: boolean
-    // prepare?: string
     cwd?: string
   } = {},
 ) {
@@ -78,7 +76,6 @@ function run(
 
   const testContext = {
     cmd,
-    // prepare,
     cwd: cwd || getCwd(),
     testName: getTestName(),
     additionalTimeout,
@@ -205,9 +202,8 @@ async function start(testContext: {
   serverIsReadyDelay: number
   debug: boolean
   testName: string
-  // prepare?: string
 }): Promise<RunProcess> {
-  const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay /*prepare */ } = testContext
+  const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = testContext
 
   let hasStarted = false
   let resolveServerStart: () => void
@@ -220,6 +216,7 @@ async function start(testContext: {
       _resolve(runProcess)
     }
     rejectServerStart = async (err: Error) => {
+      done(true)
       Logs.add({
         logType: 'stderr' as const,
         logText: String(err),
@@ -254,24 +251,13 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  /*
-  if (prepare) {
-    await startScript(prepare, testContext, {
-      onError,
-      awaitTermination: true,
-    })
-  }
-  */
-
   console.log()
   console.log(testContext.testName)
-  const done = logProgress(cmd)
-  const { terminate } = await startScript(cmd, testContext, {
+  const done = logProgress(`[run] ${cmd}`)
+  const { terminate } = startScript(cmd, testContext, {
     onError(err) {
-      done(true)
       rejectServerStart(err as Error)
     },
-    awaitTermination: false,
     onExit() {
       const exitIsExpected = hasStarted === true
       return exitIsExpected
@@ -288,10 +274,10 @@ async function start(testContext: {
         // Vite
         (text.includes('Local:') && text.includes('http://localhost:3000/'))
       if (isServerReady) {
-        done()
         assert(serverIsReadyDelay)
         await sleep(serverIsReadyDelay)
         resolveServerStart()
+        done()
       }
     },
     onStderr(data: string) {
@@ -361,7 +347,7 @@ function stopProcess({
   return promise
 }
 
-async function startScript(
+function startScript(
   cmd: string,
   testContext: { cwd: string; debug: boolean; testName: string; cmd: string },
   {
@@ -369,13 +355,11 @@ async function startScript(
     onStderr,
     onError,
     onExit,
-    awaitTermination,
   }: {
     onStdout?: (data: string) => void | Promise<void>
     onStderr?: (data: string) => void | Promise<void>
     onError: (err: Error) => void | Promise<void>
-    onExit?: () => boolean
-    awaitTermination: boolean
+    onExit: () => boolean
   },
 ) {
   let [command, ...args] = cmd.split(' ')
@@ -413,20 +397,26 @@ async function startScript(
     onStderr?.(data)
   })
   proc.on('exit', async (code) => {
-    const exitIsExpected = onExit?.() ?? true
+    const exitIsExpected = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
     const isExpected = isSuccessCode && exitIsExpected
     if (!isExpected) {
+      const errMsg = `${prefix} Unexpected premature process termination, exit code: ${code}`
       Logs.add({
-        logText: `${prefix} Unexpected premature process termination, exit code: ${code}`,
+        logText: errMsg,
         logType: 'stderr',
         testContext,
       })
+      onError(new Error(errMsg))
+      /*
       try {
         await terminate('SIGKILL')
       } catch (err: unknown) {
-        onError(err as Error)
+        if( !err.code === 'ESRCH' ) {
+          onError(err as Error)
+        }
       }
+      */
     } else {
       Logs.add({
         logText: `${prefix} Process termination. (Nominal. Exit code: ${code}.)`,
@@ -434,18 +424,7 @@ async function startScript(
         testContext,
       })
     }
-    resolvePromise()
   })
-
-  let resolvePromise!: () => void
-  const promise = new Promise<void>((resolve) => {
-    resolvePromise = resolve
-  })
-  if (!awaitTermination) {
-    resolvePromise()
-  }
-
-  await promise
 
   return { terminate }
 
