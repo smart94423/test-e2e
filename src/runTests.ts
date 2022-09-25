@@ -66,11 +66,7 @@ async function runTests(browser: Browser) {
     Logs.clear()
 
     if (isFailure) {
-      if (isTTY) {
-        console.log(`${iconFailure} FAILURE`)
-      } else {
-        console.log(`${iconFailure} ${testInfo.testFile}`)
-      }
+      console.log(`${iconFailure} ${testInfo.testFile}`)
       if (browserErrors.length === 0) {
         throw err
       } else {

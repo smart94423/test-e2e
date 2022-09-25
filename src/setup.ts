@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
-import { runCommand, sleep } from './utils'
+import { isTTY, runCommand, sleep } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
@@ -245,7 +245,7 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const done = logProgress(`[run] ${cmd}`)
+  const done = isTTY ? logProgress(`[run] ${cmd}`) : () => {}
   const { terminate } = startScript(cmd, testContext, {
     onError(err) {
       rejectServerStart(err as Error)
