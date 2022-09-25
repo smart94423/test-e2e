@@ -30,13 +30,11 @@ export let urlBase = 'http://localhost:3000'
 export const urlBaseChange = (url: string) => (urlBase = url)
 export { editFile, editFileRevert } from './editFile'
 
-const TIMEOUT_NPM_SCRIPT = 60 * 1000 * (!isGithubAction() ? 1 : isLinux() ? 0.5 : isWindows() ? 3 : 2)
-//const TIMEOUT_JEST = 60 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 5 : 3)
-const TIMEOUT_JEST = 240 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 5 : 3)
+const TIMEOUT_NPM_SCRIPT = 30 * 1000 * (!isGithubAction() ? 1 : isLinux() ? 1 : isWindows() ? 5 : 4)
+const TIMEOUT_JEST = 30 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 10 : 6)
 const TIMEOUT_AUTORETRY = 10 * 1000 * (!isGithubAction() || isLinux() ? 1 : 20) // TODO reduce `20`
 const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isGithubAction() ? 1 : isLinux() ? 1 : 4)
 const TIMEOUT_PLAYWRIGHT = TIMEOUT_JEST
-//const TIMEOUT_PAGE_LOAD = TIMEOUT_PLAYWRIGHT
 
 function skip(reason: string) {
   const testInfo = getTestInfo()
