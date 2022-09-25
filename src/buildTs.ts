@@ -12,7 +12,7 @@ async function buildTs(entry: string, outfile: string) {
     format: 'esm',
     target: 'es2020',
     bundle: true,
-    external: ['./node_modules/*'],
+    external: ['./node_modules/*', '@brillout/e2e-test-runner'],
     minify: false,
   })
 }
