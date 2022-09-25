@@ -9,8 +9,6 @@ import fs from 'fs'
 import { setTestInfo } from './getTestInfo'
 import { runTests } from './runTests'
 
-const cwd = process.cwd()
-
 import { getBrowser } from './getBrowser'
 
 type Filter = {
@@ -18,15 +16,8 @@ type Filter = {
   exclude: boolean
 }
 
-async function runTestSuites(filter: null | Filter) {
-  const testFiles = (
-    await glob(
-      ['**/*.test.ts'], // Unit tests `**/*.spec.*` are handled by Vitesse
-      { ignore: ['**/node_modules/**', '**/.git/**'], cwd, dot: true },
-    )
-  )
-    .filter((filePathRelative) => applyFilter(filePathRelative, filter))
-    .map((filePathRelative) => path.join(cwd, filePathRelative))
+async function runTestSuites({ filter, debug }: { filter: null | Filter; debug: boolean }) {
+  const testFiles = await findTestFiles(filter)
 
   const browser = await getBrowser()
 
@@ -46,14 +37,39 @@ async function runTestSuites(filter: null | Filter) {
       await import(testFileJs)
       await runTests(browser)
     } finally {
-      fs.unlinkSync(`${testFileJs}`)
-      fs.unlinkSync(`${testFileJs}.map`)
+      if (!debug) {
+        fs.unlinkSync(`${testFileJs}`)
+        fs.unlinkSync(`${testFileJs}.map`)
+      }
     }
     setTestInfo(null)
     assert(testFileJs.endsWith('.mjs'))
   }
 
   await browser.close()
+}
+
+async function findTestFiles(filter: null | Filter): Promise<string[]> {
+  const cwd = process.cwd()
+
+  if (process.env.TEST_FILES) {
+    const testFiles = process.env.TEST_FILES.split(' ').map((filePathRelative) => path.join(cwd, filePathRelative))
+    testFiles.forEach((testFile) => {
+      assert(fs.existsSync(testFile), testFile)
+    })
+    return testFiles
+  }
+
+  const testFiles = (
+    await glob(
+      ['**/*.test.ts'], // Unit tests `**/*.spec.*` are handled by Vitesse
+      { ignore: ['**/node_modules/**', '**/.git/**'], cwd, dot: true },
+    )
+  )
+    .filter((filePathRelative) => applyFilter(filePathRelative, filter))
+    .map((filePathRelative) => path.join(cwd, filePathRelative))
+
+  return testFiles
 }
 
 function applyFilter(filePathRelative: string, filter: null | Filter) {

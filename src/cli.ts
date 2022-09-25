@@ -5,28 +5,33 @@ import { Filter, runTestSuites } from './runTestSuites'
 cli()
 
 function cli() {
-  const { filter } = parseArgs()
-  runTestSuites(filter)
+  const { filter, debug } = parseArgs()
+  runTestSuites({ filter, debug })
 }
 
-function parseArgs(): { filter: null | Filter } {
-  const args = process.argv.slice(2)
-  if (args.length === 0) {
-    return { filter: null }
-  }
+function parseArgs(): { filter: null | Filter; debug: boolean } {
+  let debug = false
   const terms: string[] = []
   let exclude = false
-  args.forEach((arg) => {
-    if (arg.startsWith('--exclude')) {
+  process.argv.slice(2).forEach((arg) => {
+    if (arg === '--debug') {
+      debug = true
+    } else if (arg === '--exclude') {
       exclude = true
     } else {
       terms.push(arg)
     }
   })
+
+  const filter =
+    terms.length === 0
+      ? null
+      : {
+          terms,
+          exclude,
+        }
   return {
-    filter: {
-      terms,
-      exclude,
-    },
+    filter,
+    debug,
   }
 }
