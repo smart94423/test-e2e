@@ -1,35 +1,49 @@
 export { runTests }
 
-import assert from 'assert'
 import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
 import { logProgress } from './logProgress'
+import { assert, assertUsage } from './utils'
+
+const iconWarning = '⚠️'
 
 async function runTests(browser: Browser) {
   const testInfo = getTestInfo()
 
+  console.log()
+  console.log(testInfo.testFile)
+
   const page = await browser.newPage()
   testInfo.page = page
 
-  // Set by `test()`
-  assert(testInfo.tests)
+  // Set when user calls `skip()`
+  if (testInfo.skipped) {
+    assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
+    assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
+    console.log(` | ${iconWarning} SKIPPED: ${testInfo.skipped}`)
+    return
+  }
 
-  // Set by `run()`
+  // Set when user calls `run()`
+  assert(testInfo.runWasCalled)
   assert(testInfo.beforeAll)
   assert(testInfo.afterAll)
   assert(testInfo.afterEach)
   assert(testInfo.testTimeout)
 
-  /*
-  assert(testInfo.testRun)
-  await testInfo.testRun()
-  */
+  // Set when user calls `test()`
+  assert(testInfo.tests)
 
   await testInfo.beforeAll()
 
   for (const { testDesc, testFn } of testInfo.tests) {
     const done = logProgress(`[test] ${testDesc}`)
-    const err = await runTest(testFn, testInfo.testTimeout)
+    let err: unknown
+    try {
+      await runTest(testFn, testInfo.testTimeout)
+    } catch (err_) {
+      err = err_
+    }
     done(!!err)
     await testInfo.afterEach(err)
   }
@@ -47,7 +61,7 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   })
 
   const timeout = setTimeout(() => {
-    reject(new Error('[test][TIMEOUT]'))
+    reject(new Error(`[test][timeout after ${testTimeout / 1000} seconds]`))
   }, testTimeout)
 
   const ret: unknown = testFn()

@@ -1,6 +1,6 @@
 export { page }
 
-import assert from 'assert'
+import { assert } from './utils'
 import { getTestInfo } from './getTestInfo'
 import type { Page } from 'playwright-chromium'
 

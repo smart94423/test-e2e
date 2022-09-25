@@ -4,7 +4,7 @@ export type { Filter }
 import glob from 'fast-glob'
 import esbuild from 'esbuild'
 import path from 'path'
-import assert from 'assert'
+import { assert } from './utils'
 import fs from 'fs'
 import { setTestInfo } from './getTestInfo'
 import { runTests } from './runTests'
@@ -25,21 +25,7 @@ async function runTestSuites(filter: null | Filter) {
       { ignore: ['**/node_modules/**', '**/.git/**'], cwd, dot: true },
     )
   )
-    .filter((filePathRelative) => {
-      if (!filter) {
-        return true
-      }
-      let include = true
-      filter.terms.forEach((term) => {
-        if (!filePathRelative.includes(term)) {
-          include = false
-        }
-      })
-      if (filter.exclude) {
-        include = !include
-      }
-      return include
-    })
+    .filter((filePathRelative) => applyFilter(filePathRelative, filter))
     .map((filePathRelative) => path.join(cwd, filePathRelative))
 
   const browser = await getBrowser()
@@ -68,6 +54,22 @@ async function runTestSuites(filter: null | Filter) {
   }
 
   await browser.close()
+}
+
+function applyFilter(filePathRelative: string, filter: null | Filter) {
+  if (!filter) {
+    return true
+  }
+  const { terms, exclude } = filter
+  for (const term of terms) {
+    if (!filePathRelative.includes(term) && !exclude) {
+      return false
+    }
+    if (filePathRelative.includes(term) && exclude) {
+      return false
+    }
+  }
+  return true
 }
 
 async function buildTs(entry: string, outfile: string) {

@@ -4,7 +4,7 @@ import { dirname, resolve } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
 import { runCommand, sleep } from './utils'
 import fetch_ from 'node-fetch'
-import assert from 'assert'
+import { assert } from './utils'
 import { Logs } from './Logs'
 import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
@@ -19,6 +19,7 @@ export { fetchHtml }
 export { fetch }
 export { expectBrowserError } from './Logs'
 export { run }
+export { skip }
 export { isMinNodeVersion }
 export { isGithubAction }
 export { isLinux }
@@ -36,6 +37,11 @@ const TIMEOUT_AUTORETRY = 10 * 1000 * (!isGithubAction() || isLinux() ? 1 : 20) 
 const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isGithubAction() ? 1 : isLinux() ? 1 : 4)
 const TIMEOUT_PLAYWRIGHT = TIMEOUT_JEST
 //const TIMEOUT_PAGE_LOAD = TIMEOUT_PLAYWRIGHT
+
+function skip(reason: string) {
+  const testInfo = getTestInfo()
+  testInfo.skipped = reason
+}
 
 function run(
   cmd: string,
@@ -58,6 +64,7 @@ function run(
   additionalTimeout += serverIsReadyDelay
 
   const testInfo = getTestInfo()
+  testInfo.runWasCalled = true
   testInfo.testCmd = cmd
   testInfo.testTimeout = TIMEOUT_JEST + additionalTimeout
 
@@ -117,6 +124,9 @@ function run(
       editFileAssertReverted()
     } else {
       editFileRevert()
+    }
+
+    if (err) {
       Logs.flush()
       throw err
     }
@@ -252,8 +262,6 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  console.log()
-  console.log(testContext.testName)
   const done = logProgress(`[run] ${cmd}`)
   const { terminate } = startScript(cmd, testContext, {
     onError(err) {

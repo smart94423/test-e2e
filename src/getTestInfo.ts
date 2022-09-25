@@ -2,7 +2,7 @@ export { getTestInfo }
 export { setTestInfo }
 
 import type { Page } from 'playwright-chromium'
-import assert from 'assert'
+import { assert } from './utils'
 
 type TestInfo = {
   testFile: string
@@ -14,6 +14,8 @@ type TestInfo = {
   testCmd?: string
   testTimeout?: number
   hasStartedRunning?: boolean
+  runWasCalled?: true
+  skipped?: string
   beforeAll?: () => Promise<void>
   afterAll?: () => Promise<void>
   afterEach?: (err?: unknown) => void | Promise<void>

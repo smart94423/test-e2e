@@ -7,7 +7,7 @@ export const Logs = {
   flushEagerly: false,
 }
 
-import assert from 'assert'
+import { assert } from './utils'
 import { red, bold, blue } from 'kolorist'
 
 type LogType =

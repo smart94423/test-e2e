@@ -1,6 +1,6 @@
 export { test }
 
-import assert from 'assert'
+import { assert } from './utils'
 import { getTestInfo } from './getTestInfo'
 
 function test(testDesc: string, testFn: () => void | Promise<void>) {

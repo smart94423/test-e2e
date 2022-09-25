@@ -10,6 +10,9 @@ type Assertion = Chai.Assertion & {
   toContain: Assertion['contain']
   toMatch: Assertion['match']
   toBe: Assertion['equal']
+  toBeFalsy(): void
+  toBeTruthy(): void
+  toBee: Assertion['equal']
 }
 
 type Expect = (value: any) => Assertion
