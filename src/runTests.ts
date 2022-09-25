@@ -4,7 +4,7 @@ import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
 import { logProgress } from './logProgress'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY } from './utils'
 import { expect } from './chai/expect'
 
 const iconWarning = '⚠️'
@@ -14,8 +14,10 @@ const iconFailure = '❌'
 async function runTests(browser: Browser) {
   const testInfo = getTestInfo()
 
-  console.log()
-  console.log(testInfo.testFile)
+  if (isTTY) {
+    console.log()
+    console.log(testInfo.testFile)
+  }
 
   const page = await browser.newPage()
   testInfo.page = page
@@ -24,7 +26,11 @@ async function runTests(browser: Browser) {
   if (testInfo.skipped) {
     assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    console.log(`${iconWarning} SKIPPED: ${testInfo.skipped}`)
+    if (isTTY) {
+      console.log(`${iconWarning} SKIPPED: ${testInfo.skipped}`)
+    } else {
+      console.log(`${iconWarning} ${testInfo.testFile} (${testInfo.skipped})`)
+    }
     return
   }
 
@@ -41,7 +47,7 @@ async function runTests(browser: Browser) {
   await testInfo.beforeAll()
 
   for (const { testDesc, testFn } of testInfo.tests) {
-    const done = logProgress(`[test] ${testDesc}`)
+    const done = isTTY ? logProgress(`[test] ${testDesc}`) : () => {}
     let err: unknown
     try {
       await runTest(testFn, testInfo.testTimeout)
@@ -60,7 +66,11 @@ async function runTests(browser: Browser) {
     Logs.clear()
 
     if (isFailure) {
-      console.log(`${iconFailure} FAILURE`)
+      if (isTTY) {
+        console.log(`${iconFailure} FAILURE`)
+      } else {
+        console.log(`${iconFailure} ${testInfo.testFile}`)
+      }
       if (browserErrors.length === 0) {
         throw err
       } else {
@@ -76,7 +86,11 @@ async function runTests(browser: Browser) {
 
   await testInfo.afterAll()
   await page.close()
-  console.log(`${iconSuccess} SUCCESS`)
+  if (isTTY) {
+    console.log(`${iconSuccess} SUCCESS`)
+  } else {
+    console.log(`${iconSuccess} ${testInfo.testFile}`)
+  }
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
