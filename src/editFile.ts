@@ -17,7 +17,7 @@ function editFile(filePathRelative: string, replacer: (fileContent: string) => s
   }
   const fileContentNew = replacer(fileContent)
   // expect(fileContentNew).not.toBe(fileContent)
-  assert(fileContentNew === fileContent)
+  assert(fileContentNew !== fileContent)
   fs.writeFileSync(filePath, fileContentNew)
 }
 
