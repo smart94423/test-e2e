@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "// === Dev ===": "",
-    "dev": "tsc --watch",
+    "dev": "tsc --watch --project ./tsconfig.dev.json",
     "// === Build ===": "",
     "build": "rm -rf dist/ && tsc",
     "// === Release ===": "",

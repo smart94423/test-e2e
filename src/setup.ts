@@ -549,7 +549,7 @@ function getTestName() {
 }
 
 function removeRootDir(filePath: string) {
-  const rootDir = resolve(__dirname, '../../')
+  const rootDir = process.cwd()
   assert(filePath.startsWith(rootDir))
   return filePath.slice(rootDir.length)
 }
