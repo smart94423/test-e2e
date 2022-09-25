@@ -41,5 +41,6 @@ function clear() {
 }
 
 function isTTY() {
+  // https://stackoverflow.com/questions/34570452/node-js-stdout-clearline-and-cursorto-functions#comment80319576_34570694
   return !!process.stdout.clearLine
 }
