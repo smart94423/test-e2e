@@ -1,6 +1,7 @@
 // @ts-ignore
 import 'source-map-support/register'
-import { Filter, runTestSuites } from './runTestSuites'
+import { Filter } from './findTestFiles'
+import { runTestSuites } from './runTestSuites'
 
 cli()
 
