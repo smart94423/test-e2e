@@ -119,26 +119,12 @@ function run(
 
     logJestStep('beforeAll end')
   }
-  testInfo.afterEach = (err: unknown) => {
-    if (!err) {
+  testInfo.afterEach = (hasFailed: boolean) => {
+    if (!hasFailed) {
       editFileAssertReverted()
     } else {
       editFileRevert()
     }
-
-    if (err) {
-      Logs.flush()
-      throw err
-    }
-
-    const browserErrors = Logs.getBrowserErrors()
-    if (browserErrors.length > 0) {
-      Logs.flush()
-      // Display all browser errors
-      expect(browserErrors).deep.equal([])
-      assert(false)
-    }
-    Logs.clear()
   }
   testInfo.afterAll = async () => {
     logJestStep('afterAll start')

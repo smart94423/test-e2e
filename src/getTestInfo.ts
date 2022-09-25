@@ -18,7 +18,7 @@ type TestInfo = {
   skipped?: string
   beforeAll?: () => Promise<void>
   afterAll?: () => Promise<void>
-  afterEach?: (err?: unknown) => void | Promise<void>
+  afterEach?: (hasFailed: boolean) => void
   page?: Page
 }
 let testInfo: null | TestInfo = null

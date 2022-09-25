@@ -3,9 +3,13 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
 import { logProgress } from './logProgress'
+import { Logs } from './Logs'
 import { assert, assertUsage } from './utils'
+import { expect } from './chai/expect'
 
 const iconWarning = '⚠️'
+const iconSuccess = '✅'
+const iconFailure = '❌'
 
 async function runTests(browser: Browser) {
   const testInfo = getTestInfo()
@@ -20,7 +24,7 @@ async function runTests(browser: Browser) {
   if (testInfo.skipped) {
     assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    console.log(` | ${iconWarning} SKIPPED: ${testInfo.skipped}`)
+    console.log(` ${iconWarning} SKIPPED: ${testInfo.skipped}`)
     return
   }
 
@@ -45,11 +49,34 @@ async function runTests(browser: Browser) {
       err = err_
     }
     done(!!err)
-    await testInfo.afterEach(err)
+    testInfo.afterEach(!!err)
+
+    const browserErrors = Logs.getBrowserErrors()
+    const isFailure = err || browserErrors.length > 0
+
+    if (isFailure) {
+      Logs.flush()
+    }
+    Logs.clear()
+
+    if (isFailure) {
+      console.log(` ${iconFailure} FAILURE`)
+      if (browserErrors.length === 0) {
+        throw err
+      } else {
+        if (err) {
+          console.error(err)
+        }
+        // Display all browser errors
+        expect(browserErrors).deep.equal([])
+        assert(false)
+      }
+    }
   }
 
   await testInfo.afterAll()
   await page.close()
+  console.log(` ${iconSuccess} SUCCESS`)
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
