@@ -24,7 +24,7 @@ async function runTests(browser: Browser) {
   if (testInfo.skipped) {
     assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    console.log(` ${iconWarning} SKIPPED: ${testInfo.skipped}`)
+    console.log(`${iconWarning} SKIPPED: ${testInfo.skipped}`)
     return
   }
 
@@ -60,7 +60,7 @@ async function runTests(browser: Browser) {
     Logs.clear()
 
     if (isFailure) {
-      console.log(` ${iconFailure} FAILURE`)
+      console.log(`${iconFailure} FAILURE`)
       if (browserErrors.length === 0) {
         throw err
       } else {
@@ -76,7 +76,7 @@ async function runTests(browser: Browser) {
 
   await testInfo.afterAll()
   await page.close()
-  console.log(` ${iconSuccess} SUCCESS`)
+  console.log(`${iconSuccess} SUCCESS`)
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
