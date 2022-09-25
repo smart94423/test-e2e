@@ -8,12 +8,16 @@ const iconFail = '🔴'
 
 function logProgress(text: string, isSetup?: true) {
   const prefix = getPrefix(isSetup)
-  process.stdout.write(`${prefix}${iconPending} ${text}`)
+  if (isTTY()) {
+    process.stdout.write(`${prefix}${iconPending} ${text}`)
+  }
   let alreadyDone = false
   const done = (failed?: boolean) => {
     if (alreadyDone) return
     alreadyDone = true
-    clear()
+    if (isTTY()) {
+      clear()
+    }
     const iconDone = failed ? iconFail : iconSuccess
     process.stdout.write(`${prefix}${iconDone} ${text}\n`)
   }
@@ -34,4 +38,8 @@ function clear() {
   // @ts-ignore
   process.stdout.clearLine()
   process.stdout.cursorTo(0)
+}
+
+function isTTY() {
+  return !!process.stdout.clearLine
 }
