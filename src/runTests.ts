@@ -4,7 +4,7 @@ import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
 import { logProgress } from './logProgress'
 import { Logs } from './Logs'
-import { assert, assertUsage } from './utils'
+import { assert, assertUsage, humanizeTime } from './utils'
 import { expect } from './chai/expect'
 
 const iconWarning = '⚠️'
@@ -88,7 +88,7 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   })
 
   const timeout = setTimeout(() => {
-    reject(new Error(`[test][timeout after ${testTimeout / 1000} seconds]`))
+    reject(new Error(`[test][timeout after ${humanizeTime(testTimeout)}]`))
   }, testTimeout)
 
   const ret: unknown = testFn()
