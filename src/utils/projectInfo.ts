@@ -1,5 +1,5 @@
 export const projectInfo = {
-  projectName: '@brillout/test-runner' as const,
-  npmPackageName: '@brillout/test-runner' as const,
-  githubRepository: 'https://github.com/brillout/test-runner' as const
+  projectName: '@brillout/e2e-test-runner' as const,
+  npmPackageName: '@brillout/e2e-test-runner' as const,
+  githubRepository: 'https://github.com/brillout/e2e-test-runner' as const
 }
