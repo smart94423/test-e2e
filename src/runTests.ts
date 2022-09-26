@@ -26,11 +26,7 @@ async function runTests(browser: Browser) {
   if (testInfo.skipped) {
     assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    if (isTTY) {
-      console.log(`${iconWarning} SKIPPED: ${testInfo.skipped}`)
-    } else {
-      console.log(`${iconWarning} ${testInfo.testFile} (${testInfo.skipped})`)
-    }
+    logTestSuiteResult(false)
     return
   }
 
@@ -47,7 +43,7 @@ async function runTests(browser: Browser) {
   await testInfo.beforeAll()
 
   for (const { testDesc, testFn } of testInfo.tests) {
-    const done = isTTY ? logProgress(`[test] ${testDesc}`) : () => {}
+    const done = logProgress(`[test] ${testDesc}`)
     let err: unknown
     try {
       await runTest(testFn, testInfo.testTimeout)
@@ -66,7 +62,7 @@ async function runTests(browser: Browser) {
     Logs.clear()
 
     if (isFailure) {
-      console.log(`${iconFailure} ${testInfo.testFile}`)
+      logTestSuiteResult(false)
       if (browserErrors.length === 0) {
         throw err
       } else {
@@ -82,11 +78,7 @@ async function runTests(browser: Browser) {
 
   await testInfo.afterAll()
   await page.close()
-  if (isTTY) {
-    console.log(`${iconSuccess} SUCCESS`)
-  } else {
-    console.log(`${iconSuccess} ${testInfo.testFile}`)
-  }
+  logTestSuiteResult(true)
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
@@ -114,4 +106,18 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   })()
 
   return promise
+}
+
+function logTestSuiteResult(success: boolean) {
+  const testInfo = getTestInfo()
+  if (success) {
+    assert(!testInfo.skipped)
+    console.log(`${iconSuccess} ${testInfo.testFile} (SUCCESS)`)
+    return
+  }
+  if (testInfo.skipped) {
+    console.log(`${iconWarning} ${testInfo.testFile} (SKIPPED: ${testInfo.skipped})`)
+  } else {
+    console.log(`${iconFailure} ${testInfo.testFile} (FAILURE)`)
+  }
 }

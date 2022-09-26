@@ -245,7 +245,7 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const done = isTTY ? logProgress(`[run] ${cmd}`) : () => {}
+  const done = logProgress(`[run] ${cmd}`)
   const { terminate } = startScript(cmd, testContext, {
     onError(err) {
       rejectServerStart(err as Error)

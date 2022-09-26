@@ -10,15 +10,15 @@ const iconFail = '🔴'
 function logProgress(text: string, isSetup?: true) {
   const prefix = getPrefix(isSetup)
   if (isTTY) {
-    process.stdout.write(`${prefix}${iconPending} ${text}`)
+    const done = () => {}
+    return done
   }
+  process.stdout.write(`${prefix}${iconPending} ${text}`)
   let alreadyDone = false
   const done = (failed?: boolean) => {
     if (alreadyDone) return
     alreadyDone = true
-    if (isTTY) {
-      clear()
-    }
+    clear()
     const iconDone = failed ? iconFail : iconSuccess
     process.stdout.write(`${prefix}${iconDone} ${text}\n`)
   }
