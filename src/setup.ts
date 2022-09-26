@@ -55,7 +55,7 @@ function run(
     serverIsReadyDelay?: number
     debug?: boolean
     cwd?: string
-  } = {},
+  } = {}
 ) {
   additionalTimeout += serverIsReadyDelay
 
@@ -152,7 +152,7 @@ function run(
           args: msg.args(),
         },
         null,
-        2,
+        2
       ),
       testContext,
     })
@@ -167,7 +167,7 @@ function run(
           location: err.stack,
         },
         null,
-        2,
+        2
       ),
       testContext,
     })
@@ -351,7 +351,7 @@ function startScript(
     onStderr?: (data: string) => void | Promise<void>
     onError: (err: Error) => void | Promise<void>
     onExit: () => boolean
-  },
+  }
 ) {
   let [command, ...args] = cmd.split(' ')
   let detached = true
@@ -446,7 +446,7 @@ function startScript(
 
 async function autoRetry(
   test: () => void | Promise<void>,
-  { timeout = TIMEOUT_AUTORETRY }: { timeout?: number } = {},
+  { timeout = TIMEOUT_AUTORETRY }: { timeout?: number } = {}
 ): Promise<void> {
   const period = 100
   const numberOfTries = timeout / period
