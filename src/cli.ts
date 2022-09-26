@@ -1,6 +1,6 @@
 // @ts-ignore
 import 'source-map-support/register'
-import type { Filter } from './findTestFiles'
+import type { FindFilter } from './utils'
 import { runTestSuites } from './runTestSuites'
 
 initPromiseRejectionHandler()
@@ -11,7 +11,7 @@ function cli() {
   runTestSuites({ filter, debug })
 }
 
-function parseArgs(): { filter: null | Filter; debug: boolean } {
+function parseArgs(): { filter: null | FindFilter; debug: boolean } {
   let debug = false
   const terms: string[] = []
   let exclude = false

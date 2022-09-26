@@ -1,14 +1,8 @@
 export { findTestFiles }
-export type { Filter }
 
 import path from 'path'
 import { assert, findFiles, FindFilter } from './utils'
 import fs from 'fs'
-
-type Filter = {
-  terms: string[]
-  exclude: boolean
-}
 
 const cwd = process.cwd()
 // Unit tests `**/*.spec.*` are handled by Vitesse

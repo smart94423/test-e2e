@@ -1,15 +1,15 @@
 export { runTestSuites }
 
-import { assert } from './utils'
+import { assert, FindFilter } from './utils'
 import fs from 'fs'
 import { setTestInfo } from './getTestInfo'
 import { runTests } from './runTests'
 
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
-import { Filter, findTestFiles } from './findTestFiles'
+import { findTestFiles } from './findTestFiles'
 
-async function runTestSuites({ filter, debug }: { filter: null | Filter; debug: boolean }) {
+async function runTestSuites({ filter, debug }: { filter: null | FindFilter; debug: boolean }) {
   const testFiles = await findTestFiles(filter)
 
   const browser = await getBrowser()
