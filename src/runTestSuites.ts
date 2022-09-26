@@ -21,13 +21,13 @@ async function runTestSuites({ filter, debug }: { filter: null | FindFilter; deb
     setTestInfo({ testFile })
     try {
       await import(workaroundBug(testFileJs))
-      await runTests(browser)
     } finally {
       if (!debug) {
         fs.unlinkSync(`${testFileJs}`)
         fs.unlinkSync(`${testFileJs}.map`)
       }
     }
+    await runTests(browser)
     setTestInfo(null)
     assert(testFileJs.endsWith('.mjs'))
   }
