@@ -1,5 +1,5 @@
 {
-  "name": "@brillout/e2e-test-runner",
+  "name": "@brillout/test-e2e",
   "version": "0.1.2",
   "bin": "./bin.js",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "strip-ansi": "^6.0.1",
     "typescript": "^4.8.3"
   },
-  "repository": "github:brillout/e2e-test-runner",
+  "repository": "github:brillout/test-e2e",
   "files": [
     "dist/"
   ],
