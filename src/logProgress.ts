@@ -9,7 +9,7 @@ const iconFail = '🔴'
 
 function logProgress(text: string, isSetup?: true) {
   const prefix = getPrefix(isSetup)
-  if (isTTY) {
+  if (!isTTY) {
     const done = () => {}
     return done
   }
