@@ -28,8 +28,8 @@ async function filterGitIgnoredFiles(files: string[]): Promise<string[]> {
     //  - In other words, we remove git ignored files. (Staged files are tracked and listed by `$ git ls-files`.)
     //  - `git ls-files --others --exclude-standard` from https://stackoverflow.com/questions/3801321/git-list-only-untracked-files-also-custom-commands/3801554#3801554
     const stdout2 = await runCommand('git ls-files --others --exclude-standard', { cwd })
-    gitFiles = [...stdout1.split(' '), ...stdout2.split(' ')].map((filePathRelative) =>
-      path.join(cwd, filePathRelative)
+    gitFiles = [...stdout1.split('\n'), ...stdout2.split('\n')].map((filePathRelative) =>
+      path.join(cwd, filePathRelative),
     )
   }
   const filesFiltered = files.filter((file) => gitFiles.includes(file))

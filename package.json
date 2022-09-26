@@ -14,9 +14,6 @@
   },
   "dependencies": {
     "@brillout/part-regex": "^0.1.2",
-    "@types/chai": "^4.3.3",
-    "@types/node": "^15.6.1",
-    "@types/node-fetch": "^2.5.12",
     "chai": "^4.3.6",
     "esbuild": "^0.15.9",
     "fast-glob": "^3.2.12",
@@ -24,7 +21,12 @@
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.22.2",
     "source-map-support": "^0.5.21",
-    "strip-ansi": "^6.0.1",
+    "strip-ansi": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.3",
+    "@types/node": "^15.6.1",
+    "@types/node-fetch": "^2.5.12",
     "typescript": "^4.8.3"
   },
   "repository": "github:brillout/test-e2e",
