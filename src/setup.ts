@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
-import { isTTY, runCommand, sleep } from './utils'
+import { runCommand, sleep, logProgress } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
@@ -10,7 +10,6 @@ import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getTestInfo } from './getTestInfo'
 import { page } from './page'
-import { logProgress } from './logProgress'
 
 export { partRegex } from '@brillout/part-regex'
 export { autoRetry }
@@ -245,7 +244,7 @@ async function start(testContext: {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const done = logProgress(`[run] ${cmd}`)
+  const done = logProgress(` | [run] ${cmd}`)
   const { terminate } = startScript(cmd, testContext, {
     onError(err) {
       rejectServerStart(err as Error)

@@ -2,9 +2,8 @@ export { runTests }
 
 import type { Browser } from 'playwright-chromium'
 import { getTestInfo } from './getTestInfo'
-import { logProgress } from './logProgress'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { expect } from './chai/expect'
 
 const iconWarning = '⚠️'
@@ -43,7 +42,7 @@ async function runTests(browser: Browser) {
   await testInfo.beforeAll()
 
   for (const { testDesc, testFn } of testInfo.tests) {
-    const done = logProgress(`[test] ${testDesc}`)
+    const done = logProgress(` | [test] ${testDesc}`)
     let err: unknown
     try {
       await runTest(testFn, testInfo.testTimeout)

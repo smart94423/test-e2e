@@ -1,38 +1,26 @@
 export { logProgress }
 
-import { getTestInfo } from './getTestInfo'
-import { isTTY } from './utils'
+import { isTTY } from './isTTY'
 
 const iconSuccess = '🟢'
 const iconPending = '🟠'
 const iconFail = '🔴'
 
-function logProgress(text: string, isSetup?: true) {
-  const prefix = getPrefix(isSetup)
+function logProgress(text: string) {
   if (!isTTY) {
     const done = () => {}
     return done
   }
-  process.stdout.write(`${prefix}${iconPending} ${text}`)
+  process.stdout.write(`${iconPending} ${text}`)
   let alreadyDone = false
   const done = (failed?: boolean) => {
     if (alreadyDone) return
     alreadyDone = true
     clear()
     const iconDone = failed ? iconFail : iconSuccess
-    process.stdout.write(`${prefix}${iconDone} ${text}\n`)
+    process.stdout.write(`${iconDone} ${text}\n`)
   }
   return done
-}
-
-function getPrefix(isSetup?: true) {
-  if (isSetup) {
-    return ''
-  }
-  if (!getTestInfo()) {
-    return ''
-  }
-  return ' | '
 }
 
 function clear() {
