@@ -8,7 +8,7 @@ export const Logs = {
 }
 
 import { assert } from './utils'
-import { red, bold, blue } from 'kolorist'
+import { red, bold, blue } from 'picocolors'
 
 type LogType =
   | 'stdout'

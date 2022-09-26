@@ -8,8 +8,8 @@ specifiers:
   chai: ^4.3.6
   esbuild: ^0.15.9
   fast-glob: ^3.2.12
-  kolorist: ^1.4.1
   node-fetch: ^2.6.1
+  picocolors: ^1.0.0
   playwright-chromium: ^1.22.2
   source-map-support: ^0.5.21
   strip-ansi: ^6.0.1
@@ -23,8 +23,8 @@ dependencies:
   chai: 4.3.6
   esbuild: 0.15.9
   fast-glob: 3.2.12
-  kolorist: 1.6.0
   node-fetch: 2.6.7
+  picocolors: 1.0.0
   playwright-chromium: 1.26.0
   source-map-support: 0.5.21
   strip-ansi: 6.0.1
@@ -421,10 +421,6 @@ packages:
     engines: {node: '>=0.12.0'}
     dev: false
 
-  /kolorist/1.6.0:
-    resolution: {integrity: sha512-dLkz37Ab97HWMx9KTes3Tbi3D1ln9fCAy2zr2YVExJasDRPGRaKcoE4fycWNtnCAJfjFqe0cnY+f8KT2JePEXQ==}
-    dev: false
-
   /loupe/2.3.4:
     resolution: {integrity: sha512-OvKfgCC2Ndby6aSTREl5aCCPTNIzlDfQZvZxNUrBrihDhL3xcrYegTblhmEiCrg2kKQz4XsFIaemE5BF4ybSaQ==}
     dependencies:
@@ -470,6 +466,10 @@ packages:
 
   /pathval/1.1.1:
     resolution: {integrity: sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==}
+    dev: false
+
+  /picocolors/1.0.0:
+    resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
     dev: false
 
   /picomatch/2.3.1:

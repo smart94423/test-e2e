@@ -5,6 +5,7 @@ import { getTestInfo } from './getTestInfo'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { expect } from './chai/expect'
+import { white, bgGreen, bgRed, bgYellow } from 'picocolors'
 
 const iconWarning = '⚠️'
 const iconSuccess = '✅'
@@ -25,7 +26,7 @@ async function runTests(browser: Browser) {
   if (testInfo.skipped) {
     assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    logTestSuiteResult(false)
+    logTestsResult(false)
     return
   }
 
@@ -61,7 +62,7 @@ async function runTests(browser: Browser) {
     Logs.clear()
 
     if (isFailure) {
-      logTestSuiteResult(false)
+      logTestsResult(false)
       if (browserErrors.length === 0) {
         throw err
       } else {
@@ -77,7 +78,7 @@ async function runTests(browser: Browser) {
 
   await testInfo.afterAll()
   await page.close()
-  logTestSuiteResult(true)
+  logTestsResult(true)
 }
 
 function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
@@ -107,16 +108,19 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   return promise
 }
 
-function logTestSuiteResult(success: boolean) {
+function logTestsResult(success: boolean) {
   const testInfo = getTestInfo()
+  const passStyle = (t: string) => white(bgGreen(t))
+  const failStyle = (t: string) => white(bgRed(t))
+  const skipStyle = (t: string) => white(bgYellow(t))
   if (success) {
     assert(!testInfo.skipped)
-    console.log(`${iconSuccess} ${testInfo.testFile} (SUCCESS)`)
+    console.log(`${iconSuccess} ${passStyle('PASS')} ${testInfo.testFile} (SUCCESS)`)
     return
   }
   if (testInfo.skipped) {
-    console.log(`${iconWarning} ${testInfo.testFile} (SKIPPED: ${testInfo.skipped})`)
+    console.log(`${iconWarning} ${skipStyle('SKIP')} ${testInfo.testFile} (${testInfo.skipped})`)
   } else {
-    console.log(`${iconFailure} ${testInfo.testFile} (FAILURE)`)
+    console.log(`${iconFailure} ${failStyle('FAIL')} ${testInfo.testFile}`)
   }
 }
