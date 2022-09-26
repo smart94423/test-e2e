@@ -1,6 +1,6 @@
 {
   "name": "@brillout/e2e-test-runner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "bin": "./bin.js",
   "main": "./dist/index.js",
   "scripts": {
