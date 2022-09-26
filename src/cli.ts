@@ -1,41 +1,14 @@
 // @ts-ignore
 import 'source-map-support/register'
-import type { FindFilter } from './utils'
+import { findFilesParseCliArgs } from './utils'
 import { runTestSuites } from './runTestSuites'
 
 initPromiseRejectionHandler()
 cli()
 
 function cli() {
-  const { filter, debug } = parseArgs()
+  const { filter, debug } = findFilesParseCliArgs()
   runTestSuites({ filter, debug })
-}
-
-function parseArgs(): { filter: null | FindFilter; debug: boolean } {
-  let debug = false
-  const terms: string[] = []
-  let exclude = false
-  process.argv.slice(2).forEach((arg) => {
-    if (arg === '--debug') {
-      debug = true
-    } else if (arg === '--exclude') {
-      exclude = true
-    } else {
-      terms.push(arg)
-    }
-  })
-
-  const filter =
-    terms.length === 0
-      ? null
-      : {
-          terms,
-          exclude,
-        }
-  return {
-    filter,
-    debug,
-  }
 }
 
 function initPromiseRejectionHandler() {

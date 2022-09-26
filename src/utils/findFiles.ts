@@ -1,4 +1,5 @@
 export { findFiles }
+export { findFilesParseCliArgs }
 export type { FindFilter }
 
 import glob from 'fast-glob'
@@ -50,4 +51,31 @@ function applyFilter(filePathRelative: string, findFilter: null | FindFilter) {
     }
   }
   return true
+}
+
+function findFilesParseCliArgs(): { filter: null | FindFilter; debug: boolean } {
+  let debug = false
+  const terms: string[] = []
+  let exclude = false
+  process.argv.slice(2).forEach((arg) => {
+    if (arg === '--debug') {
+      debug = true
+    } else if (arg === '--exclude') {
+      exclude = true
+    } else {
+      terms.push(arg)
+    }
+  })
+
+  const filter =
+    terms.length === 0
+      ? null
+      : {
+          terms,
+          exclude,
+        }
+  return {
+    filter,
+    debug,
+  }
 }
