@@ -7,10 +7,6 @@ import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { expect } from './chai/expect'
 import { white, bgGreen, bgRed, bgYellow } from 'picocolors'
 
-const iconWarning = '⚠️'
-const iconSuccess = '✅'
-const iconFailure = '❌'
-
 async function runTests(browser: Browser) {
   const testInfo = getTestInfo()
 
@@ -115,12 +111,12 @@ function logTestsResult(success: boolean) {
   const skipStyle = (t: string) => white(bgYellow(t))
   if (success) {
     assert(!testInfo.skipped)
-    console.log(`${iconSuccess} ${passStyle('PASS')} ${testInfo.testFile} (SUCCESS)`)
+    console.log(`${passStyle('PASS')} ${testInfo.testFile}`)
     return
   }
   if (testInfo.skipped) {
-    console.log(`${iconWarning} ${skipStyle('SKIP')} ${testInfo.testFile} (${testInfo.skipped})`)
+    console.log(`${skipStyle('SKIP')} ${testInfo.testFile} (${testInfo.skipped})`)
   } else {
-    console.log(`${iconFailure} ${failStyle('FAIL')} ${testInfo.testFile}`)
+    console.log(`${failStyle('FAIL')} ${testInfo.testFile}`)
   }
 }
