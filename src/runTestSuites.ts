@@ -20,7 +20,7 @@ async function runTestSuites({ filter, debug }: { filter: null | Filter; debug: 
     await buildTs(testFile, testFileJs)
     setTestInfo({ testFile })
     try {
-      await import(testFileJs)
+      await import(workaroundBug(testFileJs))
       await runTests(browser)
     } finally {
       if (!debug) {
@@ -33,4 +33,9 @@ async function runTestSuites({ filter, debug }: { filter: null | Filter; debug: 
   }
 
   await browser.close()
+}
+
+// https://stackoverflow.com/questions/69665780/error-err-unsupported-esm-url-scheme-only-file-and-data-urls-are-supported-by/70057245#70057245
+function workaroundBug(testFileJs: string): string {
+  return `file://${testFileJs}`
 }
