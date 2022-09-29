@@ -10,7 +10,7 @@ export const Logs = {
 import { assert } from './utils'
 import { red, bold, blue } from 'picocolors'
 
-type LogType =
+type LogSource =
   | 'stdout'
   | 'stderr'
   | 'Browser Error'
@@ -21,7 +21,7 @@ type LogType =
   | 'Connection Error'
 type TestContext = null | { testName: string; cmd: string }
 type LogEntry = {
-  logType: LogType
+  logSource: LogSource
   logText: string
   logTimestamp: string
   testContext: TestContext
@@ -31,7 +31,7 @@ let logEntries: LogEntry[] = []
 let logEntriesNotPrinted: LogEntry[] = []
 
 function getBrowserErrors() {
-  return logEntries.filter(({ logType, isExpectedError }) => logType === 'Browser Error' && !isExpectedError)
+  return logEntries.filter(({ logSource, isExpectedError }) => logSource === 'Browser Error' && !isExpectedError)
 }
 
 function clear() {
@@ -43,10 +43,10 @@ function flush() {
   logEntriesNotPrinted.forEach((logEntry) => printLog(logEntry))
   logEntriesNotPrinted = []
 }
-function add({ logType, logText, testContext }: { logType: LogType; logText: string; testContext: TestContext }) {
+function add({ logSource, logText, testContext }: { logSource: LogSource; logText: string; testContext: TestContext }) {
   const logTimestamp = getTimestamp()
   const logEntry = {
-    logType,
+    logSource,
     logText,
     testContext,
     logTimestamp,
@@ -80,11 +80,9 @@ function getTimestamp() {
 }
 
 function printLog(logEntry: LogEntry) {
-  const { logType, logText, logTimestamp, testContext } = logEntry
+  const { logSource, logText, logTimestamp, testContext } = logEntry
 
-  let prefix: string = logType
-  if (logType === 'stderr' || logType === 'Browser Error') prefix = bold(red(logType))
-  if (logType === 'stdout' || logType === 'Browser Log') prefix = bold(blue(logType))
+  let prefix: string = colorizeLogSource(logSource)
 
   let msg = logText
   if (!msg) msg = '' // don't know why but sometimes `logText` is `undefined`
@@ -95,4 +93,10 @@ function printLog(logEntry: LogEntry) {
     msg = `[${testName}][${cmd}] ${msg}`
   }
   process.stderr.write(`[${logTimestamp}][${prefix}]${msg}`)
+}
+
+function colorizeLogSource(logSource: LogSource): string {
+  if (logSource === 'stderr' || logSource === 'Browser Error') return bold(red(logSource))
+  if (logSource === 'stdout' || logSource === 'Browser Log') return bold(blue(logSource))
+  return logSource
 }

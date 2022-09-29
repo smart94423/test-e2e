@@ -143,7 +143,7 @@ function run(
   function onConsole(msg: ConsoleMessage) {
     const type = msg.type()
     Logs.add({
-      logType: type === 'error' ? ('Browser Error' as const) : ('Browser Log' as const),
+      logSource: type === 'error' ? ('Browser Error' as const) : ('Browser Log' as const),
       logText: JSON.stringify(
         {
           type,
@@ -160,7 +160,7 @@ function run(
   // For uncaught exceptions
   function onPageError(err: Error) {
     Logs.add({
-      logType: 'Browser Error' as const,
+      logSource: 'Browser Error' as const,
       logText: JSON.stringify(
         {
           text: err.message,
@@ -178,7 +178,7 @@ function run(
       return
     }
     Logs.add({
-      logType: 'Jest',
+      logSource: 'Jest',
       logText: stepName,
       testContext,
     })
@@ -211,7 +211,7 @@ async function start(testContext: {
     rejectServerStart = async (err: Error) => {
       done(true)
       Logs.add({
-        logType: 'stderr' as const,
+        logSource: 'stderr' as const,
         logText: String(err),
         testContext,
       })
@@ -220,7 +220,7 @@ async function start(testContext: {
         await terminate('SIGKILL')
       } catch (err) {
         Logs.add({
-          logType: 'process' as const,
+          logSource: 'process' as const,
           logText: String(err),
           testContext,
         })
@@ -372,7 +372,7 @@ function startScript(
   proc.stdout.on('data', async (data: string) => {
     data = data.toString()
     Logs.add({
-      logType: 'stdout' as const,
+      logSource: 'stdout' as const,
       logText: data,
       testContext,
     })
@@ -381,7 +381,7 @@ function startScript(
   proc.stderr.on('data', async (data) => {
     data = data.toString()
     Logs.add({
-      logType: 'stderr' as const,
+      logSource: 'stderr' as const,
       logText: data,
       testContext,
     })
@@ -395,7 +395,7 @@ function startScript(
       const errMsg = `${prefix} Unexpected premature process termination, exit code: ${code}`
       Logs.add({
         logText: errMsg,
-        logType: 'stderr',
+        logSource: 'stderr',
         testContext,
       })
       onError(new Error(errMsg))
@@ -411,7 +411,7 @@ function startScript(
     } else {
       Logs.add({
         logText: `${prefix} Process termination. (Nominal. Exit code: ${code}.)`,
-        logType: 'process',
+        logSource: 'process',
         testContext,
       })
     }
@@ -475,7 +475,7 @@ async function fetch(...args: Parameters<typeof fetch_>) {
     return await fetch_(...args)
   } catch (err) {
     Logs.add({
-      logType: 'Connection Error',
+      logSource: 'Connection Error',
       logText: `Couldn't connect to \`${args[0]}\`. Args: \`${JSON.stringify(args.slice(1))}\`. Err: \`${
         // @ts-ignore
         err.message
