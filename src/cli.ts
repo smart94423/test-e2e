@@ -25,6 +25,11 @@ function initSourceMap() {
       const prefix = fsWindowsBugWorkaroundPrefix
       if (source.startsWith(prefix)) {
         source = source.slice(prefix.length)
+        if (process.platform == 'win32') {
+          assert(source.startsWith('/'))
+          source = source.slice(1)
+          source = source.split('/').join('\\')
+        }
       }
       let sourceMap = sourceMaps[source]
       if (sourceMap) {
