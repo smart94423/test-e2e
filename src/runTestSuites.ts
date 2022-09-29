@@ -1,6 +1,6 @@
 export { runTestSuites }
 
-import { assert, FindFilter } from './utils'
+import { assert, FindFilter, fsWindowsBugWorkaround } from './utils'
 import { setCurrentTest } from './getCurrentTest'
 import { runTests } from './runTests'
 
@@ -19,7 +19,7 @@ async function runTestSuites(filter: null | FindFilter) {
     const clean = await buildTs(testFile, testFileJs)
     setCurrentTest(testFile)
     try {
-      await import(workaroundBug(testFileJs))
+      await import(fsWindowsBugWorkaround(testFileJs))
     } finally {
       clean()
     }
@@ -29,9 +29,4 @@ async function runTestSuites(filter: null | FindFilter) {
   }
 
   await browser.close()
-}
-
-// https://stackoverflow.com/questions/69665780/error-err-unsupported-esm-url-scheme-only-file-and-data-urls-are-supported-by/70057245#70057245
-function workaroundBug(testFileJs: string): string {
-  return `file://${testFileJs}`
 }
