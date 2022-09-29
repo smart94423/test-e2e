@@ -17,7 +17,7 @@ type TestInfo = {
   runInfo?: {
     cmd: string
     cwd: string
-    testTimeout: number
+    testFunctionTimeout: number
     additionalTimeout: number
     serverIsReadyMessage?: string
     serverIsReadyDelay: number

@@ -52,7 +52,7 @@ async function runTests(browser: Browser) {
     const done = logProgress(`| [test] ${testDesc}`)
     let err: unknown
     try {
-      await runTest(testFn, testInfo.runInfo.testTimeout)
+      await runTest(testFn, testInfo.runInfo.testFunctionTimeout)
     } catch (err_) {
       err = err_
     }
@@ -82,7 +82,7 @@ async function runTests(browser: Browser) {
   logTestsResult(true)
 }
 
-function runTest(testFn: Function, testTimeout: number): Promise<undefined | unknown> {
+function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefined | unknown> {
   let resolve!: () => void
   let reject!: (err: unknown) => void
   const promise = new Promise<void>((resolve_, reject_) => {
@@ -91,8 +91,8 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   })
 
   const timeout = setTimeout(() => {
-    reject(new Error(`[test] Timeout after ${humanizeTime(testTimeout)}`))
-  }, testTimeout)
+    reject(new Error(`[test] Timeout after ${humanizeTime(testFunctionTimeout)}`))
+  }, testFunctionTimeout)
 
   const ret: unknown = testFn()
   ;(async () => {
