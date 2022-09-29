@@ -46,14 +46,14 @@ function run(
     additionalTimeout = 0,
     serverIsReadyMessage,
     serverIsReadyDelay = 1000,
-    debug = cliConfig.debug,
+    inspect = cliConfig.inspect,
     cwd,
   }: {
     //baseUrl?: string
     additionalTimeout?: number
     serverIsReadyMessage?: string
     serverIsReadyDelay?: number
-    debug?: boolean
+    inspect?: boolean
     cwd?: string
   } = {}
 ) {
@@ -67,10 +67,10 @@ function run(
     testFunctionTimeout: TIMEOUT_TEST_FUNCTION + additionalTimeout,
     serverIsReadyMessage,
     serverIsReadyDelay,
-    debug,
+    inspect,
   }
 
-  if (debug) {
+  if (inspect) {
     Logs.flushEagerly = true
   }
 

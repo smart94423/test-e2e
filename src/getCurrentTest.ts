@@ -21,7 +21,7 @@ type TestInfo = {
     additionalTimeout: number
     serverIsReadyMessage?: string
     serverIsReadyDelay: number
-    debug: boolean
+    inspect: boolean
   }
   hasStartedRunning?: boolean
   skipped?: string
