@@ -157,7 +157,7 @@ type RunProcess = {
 }
 async function start(): Promise<RunProcess> {
   const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
-  const done = logProgress(` | [run] ${cmd}`)
+  const done = logProgress(`| [run] ${cmd}`)
 
   let hasSuccessfullyStarted = false
   let resolveServerStart: () => void

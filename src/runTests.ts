@@ -4,7 +4,7 @@ import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
-import { white, bgGreen, bgRed, bgYellow } from 'picocolors'
+import { white, bgGreen, bgRed, bgYellow, bold } from 'picocolors'
 
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
@@ -49,7 +49,7 @@ async function runTests(browser: Browser) {
       logSource: 'test()',
       logText: testDesc,
     })
-    const done = logProgress(` | [test] ${testDesc}`)
+    const done = logProgress(`| [test] ${testDesc}`)
     let err: unknown
     try {
       await runTest(testFn, testInfo.runInfo.testTimeout)
@@ -111,9 +111,9 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
 
 function logTestsResult(success: boolean) {
   const testInfo = getCurrentTest()
-  const passStyle = (t: string) => white(bgGreen(t))
-  const failStyle = (t: string) => white(bgRed(t))
-  const skipStyle = (t: string) => white(bgYellow(t))
+  const passStyle = (t: string) => bold(white(bgGreen(t)))
+  const failStyle = (t: string) => bold(white(bgRed(t)))
+  const skipStyle = (t: string) => bold(white(bgYellow(t)))
   if (success) {
     assert(!testInfo.skipped)
     console.log(`${passStyle('PASS')} ${testInfo.testFile}`)
