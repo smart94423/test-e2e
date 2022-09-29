@@ -7,9 +7,9 @@ export const Logs = {
   flushEagerly: false,
 }
 
-import { assert } from './utils'
+import { assert, ensureNewTerminalLine } from './utils'
 import pc from 'picocolors'
-import {getCurrentTest} from './getCurrentTest'
+import { getCurrentTestOptional } from './getCurrentTest'
 
 type LogSource =
   | 'stdout'
@@ -18,6 +18,7 @@ type LogSource =
   | 'Browser Log'
   | 'Playwright'
   | 'run()'
+  | 'test()'
   | 'Connection Error'
 type LogEntry = {
   logSource: LogSource
@@ -41,7 +42,7 @@ function flush() {
   logEntriesNotPrinted.forEach((logEntry) => printLog(logEntry))
   logEntriesNotPrinted = []
 }
-function add({ logSource, logText}: { logSource: LogSource; logText: string }) {
+function add({ logSource, logText }: { logSource: LogSource; logText: string }) {
   const logTimestamp = getTimestamp()
   const logEntry = {
     logSource,
@@ -79,23 +80,35 @@ function getTimestamp() {
 function printLog(logEntry: LogEntry) {
   const { logSource, logText, logTimestamp } = logEntry
 
-  let prefix: string = colorizeLogSource(logSource)
+  let logSourceLabel: string = colorize(logSource)
+
+  const testInfo = getCurrentTestOptional()
+
+  // See https://github.com/nodejs/node/issues/8033#issuecomment-388323687
+  if (!ensureNewTerminalLine()) {
+    process.stderr.write(`\n`)
+  }
 
   let msg = logText
-  if (!msg) msg = '' // don't know why but sometimes `logText` is `undefined`
+  // I don't know why but sometimes `logText` is `undefined`
+  if (msg === undefined) msg = ''
   if (!msg.endsWith('\n')) msg = msg + '\n'
 
-  const testInfo = getCurrentTest()
-  assert(testInfo.runInfo)
+  let testInfoLabels = ''
+  if (testInfo) {
+    assert(testInfo.runInfo)
+    testInfoLabels = `[${testInfo.testName}][${testInfo.runInfo.cmd}]`
+  }
 
-  process.stderr.write(`[${logTimestamp}][${testInfo.testName}][${testInfo.runInfo.cmd}][${prefix}] ${msg}`)
+  process.stderr.write(`[${logTimestamp}]${testInfoLabels}[${logSourceLabel}] ${msg}`)
 }
 
-function colorizeLogSource(logSource: LogSource): string {
+function colorize(logSource: LogSource): string {
   const { bold } = pc
-  if (logSource === 'stderr' || logSource === 'Browser Error') return bold(pc.red(logSource))
+  if (logSource === 'stderr' || logSource === 'Browser Error' || logSource === 'Connection Error')
+    return bold(pc.red(logSource))
   if (logSource === 'stdout' || logSource === 'Browser Log') return bold(pc.blue(logSource))
   if (logSource === 'Playwright') return bold(pc.magenta(logSource))
-  if (logSource === 'run()') return bold(pc.yellow(logSource))
-  return logSource
+  if (logSource === 'run()' || logSource === 'test()') return bold(pc.yellow(logSource))
+  assert(false)
 }

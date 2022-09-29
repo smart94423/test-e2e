@@ -7,6 +7,8 @@ export function humanizeTime(milliseconds: number) {
   return `${round(minutes)} minutes`
 }
 
-function round(n: number) {
-  return n.toFixed(1)
+function round(n: number): string {
+  let rounded = n.toFixed(1)
+  if (rounded.endsWith('.0')) rounded = rounded.slice(0, -2)
+  return rounded
 }

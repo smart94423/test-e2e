@@ -4,7 +4,6 @@ import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
-import { expect } from './chai/expect'
 import { white, bgGreen, bgRed, bgYellow } from 'picocolors'
 
 async function runTests(browser: Browser) {
@@ -28,16 +27,28 @@ async function runTests(browser: Browser) {
 
   // Set when user calls `run()`
   assert(testInfo.runInfo)
-  assert(testInfo.beforeAll)
-  assert(testInfo.afterAll)
+  assert(testInfo.startServer)
+  assert(testInfo.terminateServer)
   assert(testInfo.afterEach)
 
   // Set when user calls `test()`
   assert(testInfo.tests)
 
-  await testInfo.beforeAll()
+  // TODO: resolve a success flag instead rejecting
+  try {
+    await testInfo.startServer()
+  } catch (err) {
+    console.log(err)
+    Logs.flush()
+    logTestsResult(false)
+    process.exit(1)
+  }
 
   for (const { testDesc, testFn } of testInfo.tests) {
+    Logs.add({
+      logSource: 'test()',
+      logText: testDesc,
+    })
     const done = logProgress(` | [test] ${testDesc}`)
     let err: unknown
     try {
@@ -49,29 +60,24 @@ async function runTests(browser: Browser) {
     testInfo.afterEach(!!err)
 
     const browserErrors = Logs.getBrowserErrors()
-    const isFailure = err || browserErrors.length > 0
-
+    const browserThrewError = browserErrors.length > 0
+    const isFailure = err || browserThrewError
     if (isFailure) {
-      Logs.flush()
-    }
-    Logs.clear()
-
-    if (isFailure) {
-      logTestsResult(false)
-      if (browserErrors.length === 0) {
-        throw err
-      } else {
-        if (err) {
-          console.error(err)
-        }
-        // Display all browser errors
-        expect(browserErrors).deep.equal([])
-        assert(false)
+      if (err) {
+        console.error(err)
       }
+      if (browserThrewError) {
+        console.log(new Error('The browser threw one or more error'))
+      }
+      Logs.flush()
+      logTestsResult(false)
+      process.exit(1)
+    } else {
+      Logs.clear()
     }
   }
 
-  await testInfo.afterAll()
+  await testInfo.terminateServer()
   await page.close()
   logTestsResult(true)
 }
@@ -85,7 +91,7 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
   })
 
   const timeout = setTimeout(() => {
-    reject(new Error(`[test][timeout after ${humanizeTime(testTimeout)}]`))
+    reject(new Error(`[test] Timeout after ${humanizeTime(testTimeout)}`))
   }, testTimeout)
 
   const ret: unknown = testFn()

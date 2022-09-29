@@ -1,4 +1,5 @@
 export { getCurrentTest }
+export { getCurrentTestOptional }
 export { setCurrentTest }
 
 import type { Page } from 'playwright-chromium'
@@ -24,17 +25,21 @@ type TestInfo = {
   }
   hasStartedRunning?: boolean
   skipped?: string
-  beforeAll?: () => Promise<void>
-  afterAll?: () => Promise<void>
+  startServer?: () => Promise<void>
+  terminateServer?: () => Promise<void>
   afterEach?: (hasFailed: boolean) => void
   page?: Page
 }
 let testInfo: null | TestInfo = null
 
-function getCurrentTest() {
+function getCurrentTest(): TestInfo {
   assert(testInfo)
   return testInfo
 }
+function getCurrentTestOptional(): null | TestInfo {
+  return testInfo
+}
+
 function setCurrentTest(testFile: null | string) {
   if (testFile) {
     testInfo = {

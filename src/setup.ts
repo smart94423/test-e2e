@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
-import { runCommand, sleep, logProgress, cliConfig } from './utils'
+import { runCommand, sleep, logProgress, cliConfig, humanizeTime } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
@@ -75,7 +75,7 @@ function run(
   }
 
   let runProcess: RunProcess | null = null
-  testInfo.beforeAll = async () => {
+  testInfo.startServer = async () => {
     runProcess = await start()
 
     page.on('console', onConsole)
@@ -101,7 +101,7 @@ function run(
       editFileRevert()
     }
   }
-  testInfo.afterAll = async () => {
+  testInfo.terminateServer = async () => {
     page.off('console', onConsole)
     page.off('pageerror', onPageError)
 
@@ -111,7 +111,6 @@ function run(
     }
   }
 
-  // return { page }
   return
 
   // Also called when the page throws an error or a warning
@@ -158,8 +157,9 @@ type RunProcess = {
 }
 async function start(): Promise<RunProcess> {
   const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
+  const done = logProgress(` | [run] ${cmd}`)
 
-  let hasStarted = false
+  let hasSuccessfullyStarted = false
   let resolveServerStart: () => void
   let rejectServerStart: (err: Error) => void
   const promise = new Promise<RunProcess>((_resolve, _reject) => {
@@ -168,7 +168,7 @@ async function start(): Promise<RunProcess> {
         logSource: 'run()',
         logText: 'server is ready',
       })
-      hasStarted = true
+      hasSuccessfullyStarted = true
       clearTimeout(serverStartTimeout)
       const runProcess = { terminate }
       _resolve(runProcess)
@@ -193,12 +193,14 @@ async function start(): Promise<RunProcess> {
   })
 
   const timeoutTotal = TIMEOUT_NPM_SCRIPT + additionalTimeout
+  let hasTimedout = false
   const serverStartTimeout = setTimeout(() => {
     let errMsg = ''
-    errMsg += `Server still didn't start after ${timeoutTotal / 1000} seconds of running the npm script \`${cmd}\`.`
+    errMsg += `Server still didn't start after ${humanizeTime(timeoutTotal)} of running the npm script \`${cmd}\`.`
     if (serverIsReadyMessage) {
       errMsg += ` (The stdout of the npm script did not include: "${serverIsReadyMessage}".)`
     }
+    hasTimedout = true
     rejectServerStart(new Error(errMsg))
   }, timeoutTotal)
 
@@ -207,14 +209,13 @@ async function start(): Promise<RunProcess> {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const done = logProgress(` | [run] ${cmd}`)
   const { terminate } = execRunScript({
     onError(err) {
       rejectServerStart(err as Error)
     },
     onExit() {
-      const exitIsExpected = hasStarted === true
-      return exitIsExpected
+      const exitIsPossible = hasSuccessfullyStarted === true || hasTimedout
+      return exitIsPossible
     },
     async onStdout(data: string) {
       const text = stripAnsi(data)
@@ -323,11 +324,9 @@ function execRunScript({
   }
   Logs.add({
     logSource: 'run()',
-    logText: `Spawn command`,
+    logText: `Spawn command \`${cmd}\``,
   })
   const proc = spawn(command, args, { cwd, detached })
-
-  const prefix = `[Run Start][${cwd}][${cmd}]`
 
   proc.stdin.on('data', async (data: string) => {
     onError(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
@@ -349,11 +348,11 @@ function execRunScript({
     onStderr?.(data)
   })
   proc.on('exit', async (code) => {
-    const exitIsExpected = onExit()
+    const exitIsPossible = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
-    const isExpected = isSuccessCode && exitIsExpected
+    const isExpected = isSuccessCode && exitIsPossible
     if (!isExpected) {
-      const errMsg = `${prefix} Unexpected premature process termination, exit code: ${code}`
+      const errMsg = `Unexpected premature process termination, exit code: ${code}`
       Logs.add({
         logText: errMsg,
         logSource: 'stderr',
@@ -370,7 +369,7 @@ function execRunScript({
       */
     } else {
       Logs.add({
-        logText: `${prefix} Process termination. (Nominal. Exit code: ${code}.)`,
+        logText: `Process termination. (Nominal, exit code: ${code}.)`,
         logSource: 'run()',
       })
     }

@@ -1,7 +1,6 @@
 export { runTestSuites }
 
-import { assert, cliConfig, FindFilter } from './utils'
-import fs from 'fs'
+import { assert, FindFilter } from './utils'
 import { setCurrentTest } from './getCurrentTest'
 import { runTests } from './runTests'
 
@@ -17,15 +16,12 @@ async function runTestSuites(filter: null | FindFilter) {
   for (const testFile of testFiles) {
     assert(testFile.endsWith('.ts'))
     const testFileJs = testFile.replace('.ts', '.mjs')
-    await buildTs(testFile, testFileJs)
+    const clean = await buildTs(testFile, testFileJs)
     setCurrentTest(testFile)
     try {
       await import(workaroundBug(testFileJs))
     } finally {
-      if (!cliConfig.debugEsbuild) {
-        fs.unlinkSync(`${testFileJs}`)
-        fs.unlinkSync(`${testFileJs}.map`)
-      }
+      clean()
     }
     await runTests(browser)
     setCurrentTest(null)
