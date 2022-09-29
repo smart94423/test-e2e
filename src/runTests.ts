@@ -1,14 +1,14 @@
 export { runTests }
 
 import type { Browser } from 'playwright-chromium'
-import { getTestInfo } from './getTestInfo'
+import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { expect } from './chai/expect'
 import { white, bgGreen, bgRed, bgYellow } from 'picocolors'
 
 async function runTests(browser: Browser) {
-  const testInfo = getTestInfo()
+  const testInfo = getCurrentTest()
 
   if (isTTY) {
     console.log()
@@ -20,18 +20,17 @@ async function runTests(browser: Browser) {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
-    assertUsage(!testInfo.runWasCalled, 'You cannot call `run()` after calling `skip()`')
+    assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
     logTestsResult(false)
     return
   }
 
   // Set when user calls `run()`
-  assert(testInfo.runWasCalled)
+  assert(testInfo.runInfo)
   assert(testInfo.beforeAll)
   assert(testInfo.afterAll)
   assert(testInfo.afterEach)
-  assert(testInfo.testTimeout)
 
   // Set when user calls `test()`
   assert(testInfo.tests)
@@ -42,7 +41,7 @@ async function runTests(browser: Browser) {
     const done = logProgress(` | [test] ${testDesc}`)
     let err: unknown
     try {
-      await runTest(testFn, testInfo.testTimeout)
+      await runTest(testFn, testInfo.runInfo.testTimeout)
     } catch (err_) {
       err = err_
     }
@@ -105,7 +104,7 @@ function runTest(testFn: Function, testTimeout: number): Promise<undefined | unk
 }
 
 function logTestsResult(success: boolean) {
-  const testInfo = getTestInfo()
+  const testInfo = getCurrentTest()
   const passStyle = (t: string) => white(bgGreen(t))
   const failStyle = (t: string) => white(bgRed(t))
   const skipStyle = (t: string) => white(bgYellow(t))

@@ -7,8 +7,8 @@ initPromiseRejectionHandler()
 cli()
 
 function cli() {
-  const { filter, debug } = findFilesParseCliArgs()
-  runTestSuites({ filter, debug })
+  const filter = findFilesParseCliArgs()
+  runTestSuites(filter)
 }
 
 function initPromiseRejectionHandler() {

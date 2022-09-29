@@ -53,16 +53,14 @@ function applyFilter(filePathRelative: string, findFilter: null | FindFilter) {
   return true
 }
 
-function findFilesParseCliArgs(): { filter: null | FindFilter; debug: boolean } {
-  let debug = false
+function findFilesParseCliArgs(): null | FindFilter {
   const terms: string[] = []
   let exclude = false
   process.argv.slice(2).forEach((arg) => {
-    if (arg === '--debug') {
-      debug = true
-    } else if (arg === '--exclude') {
+    if (arg === '--exclude') {
       exclude = true
-    } else {
+    }
+    if (!arg.startsWith('--')) {
       terms.push(arg)
     }
   })
@@ -74,8 +72,5 @@ function findFilesParseCliArgs(): { filter: null | FindFilter; debug: boolean } 
           terms,
           exclude,
         }
-  return {
-    filter,
-    debug,
-  }
+  return filter
 }

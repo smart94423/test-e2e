@@ -5,7 +5,7 @@ export { editFileAssertReverted }
 import fs from 'fs'
 import path from 'path'
 import { assert } from './utils'
-import { getTestInfo } from './getTestInfo'
+import { getCurrentTest } from './getCurrentTest'
 
 const filesContentOriginal: Record<string, string> = {}
 
@@ -41,7 +41,7 @@ function editFileAssertReverted() {
 }
 
 function getFilePath(filePathRelative: string) {
-  const { testFile } = getTestInfo()
+  const { testFile } = getCurrentTest()
   const cwd = path.dirname(testFile)
   const filePath = require.resolve(filePathRelative, { paths: [cwd] })
   return filePath

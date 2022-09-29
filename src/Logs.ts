@@ -8,23 +8,21 @@ export const Logs = {
 }
 
 import { assert } from './utils'
-import { red, bold, blue } from 'picocolors'
+import pc from 'picocolors'
+import {getCurrentTest} from './getCurrentTest'
 
 type LogSource =
   | 'stdout'
   | 'stderr'
   | 'Browser Error'
   | 'Browser Log'
-  | 'Run Start'
-  | 'Jest'
-  | 'process'
+  | 'Playwright'
+  | 'run()'
   | 'Connection Error'
-type TestContext = null | { testName: string; cmd: string }
 type LogEntry = {
   logSource: LogSource
   logText: string
   logTimestamp: string
-  testContext: TestContext
   isExpectedError: boolean
 }
 let logEntries: LogEntry[] = []
@@ -43,12 +41,11 @@ function flush() {
   logEntriesNotPrinted.forEach((logEntry) => printLog(logEntry))
   logEntriesNotPrinted = []
 }
-function add({ logSource, logText, testContext }: { logSource: LogSource; logText: string; testContext: TestContext }) {
+function add({ logSource, logText}: { logSource: LogSource; logText: string }) {
   const logTimestamp = getTimestamp()
   const logEntry = {
     logSource,
     logText,
-    testContext,
     logTimestamp,
     isExpectedError: false,
   }
@@ -80,7 +77,7 @@ function getTimestamp() {
 }
 
 function printLog(logEntry: LogEntry) {
-  const { logSource, logText, logTimestamp, testContext } = logEntry
+  const { logSource, logText, logTimestamp } = logEntry
 
   let prefix: string = colorizeLogSource(logSource)
 
@@ -88,15 +85,17 @@ function printLog(logEntry: LogEntry) {
   if (!msg) msg = '' // don't know why but sometimes `logText` is `undefined`
   if (!msg.endsWith('\n')) msg = msg + '\n'
 
-  if (testContext) {
-    const { testName, cmd } = testContext
-    msg = `[${testName}][${cmd}] ${msg}`
-  }
-  process.stderr.write(`[${logTimestamp}][${prefix}]${msg}`)
+  const testInfo = getCurrentTest()
+  assert(testInfo.runInfo)
+
+  process.stderr.write(`[${logTimestamp}][${testInfo.testName}][${testInfo.runInfo.cmd}][${prefix}] ${msg}`)
 }
 
 function colorizeLogSource(logSource: LogSource): string {
-  if (logSource === 'stderr' || logSource === 'Browser Error') return bold(red(logSource))
-  if (logSource === 'stdout' || logSource === 'Browser Log') return bold(blue(logSource))
+  const { bold } = pc
+  if (logSource === 'stderr' || logSource === 'Browser Error') return bold(pc.red(logSource))
+  if (logSource === 'stdout' || logSource === 'Browser Log') return bold(pc.blue(logSource))
+  if (logSource === 'Playwright') return bold(pc.magenta(logSource))
+  if (logSource === 'run()') return bold(pc.yellow(logSource))
   return logSource
 }

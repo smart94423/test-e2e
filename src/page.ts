@@ -1,12 +1,12 @@
 export { page }
 
 import { assert } from './utils'
-import { getTestInfo } from './getTestInfo'
+import { getCurrentTest } from './getCurrentTest'
 import type { Page } from 'playwright-chromium'
 
 const page = new Proxy({} as Page, {
   get(_, prop) {
-    const { page } = getTestInfo()
+    const { page } = getCurrentTest()
     assert(page)
     return page[prop as keyof Page]
   },

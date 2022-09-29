@@ -2,13 +2,13 @@ import { spawn } from 'child_process'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
-import { runCommand, sleep, logProgress } from './utils'
+import { runCommand, sleep, logProgress, cliConfig } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
-import { getTestInfo } from './getTestInfo'
+import { getCurrentTest } from './getCurrentTest'
 import { page } from './page'
 
 export { partRegex } from '@brillout/part-regex'
@@ -35,7 +35,7 @@ const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isGithubAction() ? 1 : isLinux
 const TIMEOUT_PLAYWRIGHT = TIMEOUT_JEST
 
 function skip(reason: string) {
-  const testInfo = getTestInfo()
+  const testInfo = getCurrentTest()
   testInfo.skipped = reason
 }
 
@@ -46,7 +46,7 @@ function run(
     additionalTimeout = 0,
     serverIsReadyMessage,
     serverIsReadyDelay = 1000,
-    debug = !!process.env.DEBUG,
+    debug = cliConfig.debug,
     cwd,
   }: {
     //baseUrl?: string
@@ -59,43 +59,24 @@ function run(
 ) {
   additionalTimeout += serverIsReadyDelay
 
-  const testInfo = getTestInfo()
-  testInfo.runWasCalled = true
-  testInfo.testCmd = cmd
-  testInfo.testTimeout = TIMEOUT_JEST + additionalTimeout
-
-  /*
-  const browser = await getBrowser()
-  const page = await browser.newPage()
-  testInfo.page = page
-
-  const { page } = testInfo
-  // Set by `./runTests`
-  assert(page)
-  */
-
-  if (debug) {
-    Logs.flushEagerly = true
-  }
-
-  const testContext = {
+  const testInfo = getCurrentTest()
+  testInfo.runInfo = {
     cmd,
     cwd: cwd || getCwd(),
-    testName: getTestName(),
     additionalTimeout,
+    testTimeout: TIMEOUT_JEST + additionalTimeout,
     serverIsReadyMessage,
     serverIsReadyDelay,
     debug,
   }
 
-  logJestStep('run start')
+  if (debug) {
+    Logs.flushEagerly = true
+  }
 
   let runProcess: RunProcess | null = null
   testInfo.beforeAll = async () => {
-    logJestStep('beforeAll start')
-
-    runProcess = await start(testContext)
-    logJestStep('run done')
+    runProcess = await start()
 
     page.on('console', onConsole)
     page.on('pageerror', onPageError)
@@ -112,8 +93,6 @@ function run(
       { timeout: TIMEOUT_PAGE_LOAD + additionalTimeout },
     )
     */
-
-    logJestStep('beforeAll end')
   }
   testInfo.afterEach = (hasFailed: boolean) => {
     if (!hasFailed) {
@@ -123,8 +102,6 @@ function run(
     }
   }
   testInfo.afterAll = async () => {
-    logJestStep('afterAll start')
-
     page.off('console', onConsole)
     page.off('pageerror', onPageError)
 
@@ -132,8 +109,6 @@ function run(
     if (runProcess) {
       await runProcess.terminate('SIGINT')
     }
-
-    logJestStep('afterAll end')
   }
 
   // return { page }
@@ -143,7 +118,7 @@ function run(
   function onConsole(msg: ConsoleMessage) {
     const type = msg.type()
     Logs.add({
-      logSource: type === 'error' ? ('Browser Error' as const) : ('Browser Log' as const),
+      logSource: type === 'error' ? 'Browser Error' : 'Browser Log',
       logText: JSON.stringify(
         {
           type,
@@ -154,13 +129,12 @@ function run(
         null,
         2
       ),
-      testContext,
     })
   }
   // For uncaught exceptions
   function onPageError(err: Error) {
     Logs.add({
-      logSource: 'Browser Error' as const,
+      logSource: 'Browser Error',
       logText: JSON.stringify(
         {
           text: err.message,
@@ -169,40 +143,31 @@ function run(
         null,
         2
       ),
-      testContext,
-    })
-  }
-
-  function logJestStep(stepName: string) {
-    if (!debug) {
-      return
-    }
-    Logs.add({
-      logSource: 'Jest',
-      logText: stepName,
-      testContext,
     })
   }
 }
+
+function getRunInfo() {
+  const testInfo = getCurrentTest()
+  assert(testInfo.runInfo)
+  return testInfo.runInfo
+}
+
 type RunProcess = {
   terminate: (signal: 'SIGINT' | 'SIGKILL') => Promise<void>
 }
-async function start(testContext: {
-  cmd: string
-  cwd: string
-  additionalTimeout: number
-  serverIsReadyMessage?: string
-  serverIsReadyDelay: number
-  debug: boolean
-  testName: string
-}): Promise<RunProcess> {
-  const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = testContext
+async function start(): Promise<RunProcess> {
+  const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
 
   let hasStarted = false
   let resolveServerStart: () => void
   let rejectServerStart: (err: Error) => void
   const promise = new Promise<RunProcess>((_resolve, _reject) => {
     resolveServerStart = () => {
+      Logs.add({
+        logSource: 'run()',
+        logText: 'server is ready',
+      })
       hasStarted = true
       clearTimeout(serverStartTimeout)
       const runProcess = { terminate }
@@ -211,18 +176,16 @@ async function start(testContext: {
     rejectServerStart = async (err: Error) => {
       done(true)
       Logs.add({
-        logSource: 'stderr' as const,
+        logSource: 'stderr',
         logText: String(err),
-        testContext,
       })
       clearTimeout(serverStartTimeout)
       try {
         await terminate('SIGKILL')
       } catch (err) {
         Logs.add({
-          logSource: 'process' as const,
+          logSource: 'run()',
           logText: String(err),
-          testContext,
         })
       }
       _reject(err)
@@ -245,7 +208,7 @@ async function start(testContext: {
   }
 
   const done = logProgress(` | [run] ${cmd}`)
-  const { terminate } = startScript(cmd, testContext, {
+  const { terminate } = execRunScript({
     onError(err) {
       rejectServerStart(err as Error)
     },
@@ -338,21 +301,18 @@ function stopProcess({
   return promise
 }
 
-function startScript(
-  cmd: string,
-  testContext: { cwd: string; debug: boolean; testName: string; cmd: string },
-  {
-    onStdout,
-    onStderr,
-    onError,
-    onExit,
-  }: {
-    onStdout?: (data: string) => void | Promise<void>
-    onStderr?: (data: string) => void | Promise<void>
-    onError: (err: Error) => void | Promise<void>
-    onExit: () => boolean
-  }
-) {
+function execRunScript({
+  onStdout,
+  onStderr,
+  onError,
+  onExit,
+}: {
+  onStdout?: (data: string) => void | Promise<void>
+  onStderr?: (data: string) => void | Promise<void>
+  onError: (err: Error) => void | Promise<void>
+  onExit: () => boolean
+}) {
+  const { cwd, cmd } = getRunInfo()
   let [command, ...args] = cmd.split(' ')
   let detached = true
   if (isWindows()) {
@@ -361,7 +321,10 @@ function startScript(
       command = command + '.cmd'
     }
   }
-  const { cwd } = testContext
+  Logs.add({
+    logSource: 'run()',
+    logText: `Spawn command`,
+  })
   const proc = spawn(command, args, { cwd, detached })
 
   const prefix = `[Run Start][${cwd}][${cmd}]`
@@ -372,18 +335,16 @@ function startScript(
   proc.stdout.on('data', async (data: string) => {
     data = data.toString()
     Logs.add({
-      logSource: 'stdout' as const,
+      logSource: 'stdout',
       logText: data,
-      testContext,
     })
     onStdout?.(data)
   })
   proc.stderr.on('data', async (data) => {
     data = data.toString()
     Logs.add({
-      logSource: 'stderr' as const,
+      logSource: 'stderr',
       logText: data,
-      testContext,
     })
     onStderr?.(data)
   })
@@ -396,7 +357,6 @@ function startScript(
       Logs.add({
         logText: errMsg,
         logSource: 'stderr',
-        testContext,
       })
       onError(new Error(errMsg))
       /*
@@ -411,8 +371,7 @@ function startScript(
     } else {
       Logs.add({
         logText: `${prefix} Process termination. (Nominal. Exit code: ${code}.)`,
-        logSource: 'process',
-        testContext,
+        logSource: 'run()',
       })
     }
   })
@@ -480,7 +439,6 @@ async function fetch(...args: Parameters<typeof fetch_>) {
         // @ts-ignore
         err.message
       }\``,
-      testContext: null,
     })
     throw new Error("Couldn't connect to server. See `Connection Error` log for more details.")
   }
@@ -532,22 +490,7 @@ function isGithubAction() {
 }
 
 function getCwd() {
-  const { testFile } = getTestInfo()
+  const { testFile } = getCurrentTest()
   const cwd = dirname(testFile)
   return cwd
-}
-function getTestName() {
-  const { testFile } = getTestInfo()
-  const pathRelative = removeRootDir(testFile)
-  if (testFile.includes('examples')) {
-    return dirname(pathRelative)
-  } else {
-    return pathRelative
-  }
-}
-
-function removeRootDir(filePath: string) {
-  const rootDir = process.cwd()
-  assert(filePath.startsWith(rootDir))
-  return filePath.slice(rootDir.length)
 }
