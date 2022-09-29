@@ -1,5 +1,5 @@
 import sourceMapSupport from 'source-map-support'
-import { findFilesParseCliArgs, fsWindowsBugWorkaroundPrefix } from './utils'
+import { assert, findFilesParseCliArgs, fsWindowsBugWorkaroundPrefix } from './utils'
 import { runTestSuites } from './runTestSuites'
 import { sourceMaps } from './buildTs'
 
@@ -32,6 +32,7 @@ function initSourceMap() {
           map: sourceMap,
         }
       }
+      assert(!source.endsWith('.test.mjs'), { source, sourceMapsKeys: Object.keys(sourceMaps) })
       return null
     },
   })
