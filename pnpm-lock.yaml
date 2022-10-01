@@ -5,6 +5,7 @@ specifiers:
   '@types/chai': ^4.3.3
   '@types/node': ^15.6.1
   '@types/node-fetch': ^2.5.12
+  '@types/source-map-support': ^0.5.6
   chai: ^4.3.6
   esbuild: ^0.15.9
   fast-glob: ^3.2.12
@@ -30,6 +31,7 @@ devDependencies:
   '@types/chai': 4.3.3
   '@types/node': 15.14.9
   '@types/node-fetch': 2.6.2
+  '@types/source-map-support': 0.5.6
   typescript: 4.8.3
 
 packages:
@@ -90,6 +92,12 @@ packages:
 
   /@types/node/15.14.9:
     resolution: {integrity: sha512-qjd88DrCxupx/kJD5yQgZdcYKZKSIGBVDIBE1/LTGcNm3d2Np/jxojkdePDdfnBHJc5W7vSMpbJ1aB7p/Py69A==}
+    dev: true
+
+  /@types/source-map-support/0.5.6:
+    resolution: {integrity: sha512-b2nJ9YyXmkhGaa2b8VLM0kJ04xxwNyijcq12/kDoomCt43qbHBeK2SLNJ9iJmETaAj+bKUT05PQUu3Q66GvLhQ==}
+    dependencies:
+      source-map: 0.6.1
     dev: true
 
   /ansi-regex/5.0.1:
@@ -519,7 +527,6 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /strip-ansi/6.0.1:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
