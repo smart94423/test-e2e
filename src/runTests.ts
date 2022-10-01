@@ -19,9 +19,9 @@ async function runTests(browser: Browser) {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
+    logTestsResult(false)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    logTestsResult(false)
     return
   }
 
@@ -38,9 +38,9 @@ async function runTests(browser: Browser) {
   try {
     await testInfo.startServer()
   } catch (err) {
+    logTestsResult(false)
     console.log(err)
     Logs.flush()
-    logTestsResult(false)
     process.exit(1)
   }
 
@@ -63,14 +63,14 @@ async function runTests(browser: Browser) {
     const browserThrewError = browserErrors.length > 0
     const isFailure = err || browserThrewError
     if (isFailure) {
+      logTestsResult(false)
       if (err) {
         console.error(err)
       }
       if (browserThrewError) {
-        console.log(new Error('The browser threw one or more error'))
+        console.log(new Error('The browser threw one or more error, see browser logs below.'))
       }
       Logs.flush()
-      logTestsResult(false)
       process.exit(1)
     } else {
       Logs.clear()
