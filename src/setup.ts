@@ -117,7 +117,15 @@ function run(
   function onConsole(msg: ConsoleMessage) {
     const type = msg.type()
     Logs.add({
-      logSource: type === 'error' ? 'Browser Error' : 'Browser Log',
+      logSource: (() => {
+        if (type === 'error') {
+          return 'Browser Error'
+        }
+        if (type === 'warning') {
+          return 'Browser Warning'
+        }
+        return 'Browser Log'
+      })(),
       logText: JSON.stringify(
         {
           type,

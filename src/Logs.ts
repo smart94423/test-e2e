@@ -3,7 +3,7 @@ export const Logs = {
   add,
   flush,
   clear,
-  getBrowserErrors,
+  hasError,
   flushEagerly: false,
 }
 
@@ -15,6 +15,7 @@ type LogSource =
   | 'stdout'
   | 'stderr'
   | 'Browser Error'
+  | 'Browser Warning'
   | 'Browser Log'
   | 'Playwright'
   | 'run()'
@@ -29,8 +30,12 @@ type LogEntry = {
 let logEntries: LogEntry[] = []
 let logEntriesNotPrinted: LogEntry[] = []
 
-function getBrowserErrors() {
-  return logEntries.filter(({ logSource, isExpectedError }) => logSource === 'Browser Error' && !isExpectedError)
+function hasError(): boolean {
+  const logErrors = logEntries.filter(
+    ({ logSource, isExpectedError }) =>
+      (logSource === 'Browser Error' || logSource === 'Browser Warning' || logSource === 'stderr') && !isExpectedError
+  )
+  return logErrors.length > 0
 }
 
 function clear() {
@@ -107,8 +112,9 @@ function colorize(logSource: LogSource): string {
   const { bold } = pc
   if (logSource === 'stderr' || logSource === 'Browser Error' || logSource === 'Connection Error')
     return bold(pc.red(logSource))
+  if (logSource === 'Browser Warning') return bold(pc.yellow(logSource))
   if (logSource === 'stdout' || logSource === 'Browser Log') return bold(pc.blue(logSource))
   if (logSource === 'Playwright') return bold(pc.magenta(logSource))
-  if (logSource === 'run()' || logSource === 'test()') return bold(pc.yellow(logSource))
+  if (logSource === 'run()' || logSource === 'test()') return bold(pc.cyan(logSource))
   assert(false)
 }

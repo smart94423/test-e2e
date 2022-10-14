@@ -59,16 +59,15 @@ async function runTests(browser: Browser) {
     done(!!err)
     testInfo.afterEach(!!err)
 
-    const browserErrors = Logs.getBrowserErrors()
-    const browserThrewError = browserErrors.length > 0
-    const isFailure = err || browserThrewError
+    const hasErrorLog = Logs.hasError()
+    const isFailure = err || hasErrorLog
     if (isFailure) {
       logTestsResult(false)
       if (err) {
         console.error(err)
       }
-      if (browserThrewError) {
-        console.log(new Error('The browser threw one or more error, see browser logs below.'))
+      if (hasErrorLog) {
+        console.log(new Error('The browser/server threw/logged one or more error, see logs below.'))
       }
       Logs.flush()
       process.exit(1)
