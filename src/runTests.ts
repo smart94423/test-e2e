@@ -59,7 +59,7 @@ async function runTests(browser: Browser) {
     done(!!err)
     testInfo.afterEach(!!err)
 
-    const hasErrorLog = Logs.hasError()
+    const hasErrorLog = Logs.hasError(testInfo.runInfo.onlyFailOnBrowserError)
     const isFailure = err || hasErrorLog
     if (isFailure) {
       logTestsResult(false)

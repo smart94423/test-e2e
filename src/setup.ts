@@ -48,6 +48,7 @@ function run(
     serverIsReadyDelay = 1000,
     inspect = cliConfig.inspect,
     cwd,
+    onlyFailOnBrowserError = false,
   }: {
     //baseUrl?: string
     additionalTimeout?: number
@@ -55,6 +56,7 @@ function run(
     serverIsReadyDelay?: number
     inspect?: boolean
     cwd?: string
+    onlyFailOnBrowserError?: boolean
   } = {}
 ) {
   additionalTimeout += serverIsReadyDelay
@@ -68,6 +70,7 @@ function run(
     serverIsReadyMessage,
     serverIsReadyDelay,
     inspect,
+    onlyFailOnBrowserError,
   }
 
   if (inspect) {

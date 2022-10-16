@@ -30,11 +30,19 @@ type LogEntry = {
 let logEntries: LogEntry[] = []
 let logEntriesNotPrinted: LogEntry[] = []
 
-function hasError(): boolean {
-  const logErrors = logEntries.filter(
-    ({ logSource, isExpectedError }) =>
-      (logSource === 'Browser Error' || logSource === 'Browser Warning' || logSource === 'stderr') && !isExpectedError
-  )
+function hasError(onlyFailOnBrowserError: boolean): boolean {
+  const logErrors = logEntries.filter(({ logSource, isExpectedError }) => {
+    if (isExpectedError) {
+      return
+    }
+    if (!onlyFailOnBrowserError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+      return true
+    }
+    if (logSource === 'Browser Error') {
+      return true
+    }
+    return false
+  })
   return logErrors.length > 0
 }
 
