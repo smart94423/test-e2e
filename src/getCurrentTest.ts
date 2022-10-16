@@ -21,7 +21,7 @@ type TestInfo = {
     additionalTimeout: number
     serverIsReadyMessage?: string
     serverIsReadyDelay: number
-    inspect: boolean,
+    inspect: boolean
     onlyFailOnBrowserError: boolean
   }
   hasStartedRunning?: boolean
