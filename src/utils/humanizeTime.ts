@@ -1,4 +1,6 @@
-export function humanizeTime(milliseconds: number) {
+export { humanizeTime }
+
+function humanizeTime(milliseconds: number) {
   const seconds = milliseconds / 1000
   if (seconds < 120) {
     return `${round(seconds)} seconds`
