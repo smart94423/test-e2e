@@ -10,6 +10,7 @@ export const Logs = {
 import { assert, ensureNewTerminalLine } from './utils'
 import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
+import { getConfig } from './getConfig'
 
 type LogSource =
   | 'stdout'
@@ -57,11 +58,23 @@ function flush() {
 }
 function add({ logSource, logText }: { logSource: LogSource; logText: string }) {
   const logTimestamp = getTimestamp()
+
+  const isNotFailure = (() => {
+    const config = getConfig()
+    if (!config.tolerateError) {
+      return false
+    }
+    return config.tolerateError({
+      logSource,
+      logText,
+    })
+  })()
+
   const logEntry = {
     logSource,
     logText,
     logTimestamp,
-    isNotFailure: false,
+    isNotFailure,
   }
   logEntriesNotPrinted.push(logEntry)
   logEntries.push(logEntry)

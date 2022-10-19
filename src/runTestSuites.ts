@@ -7,8 +7,11 @@ import { runTests } from './runTests'
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
+import { loadConfig } from './getConfig'
 
 async function runTestSuites(filter: null | FindFilter) {
+  await loadConfig()
+
   const testFiles = await findTestFiles(filter)
 
   const browser = await getBrowser()
