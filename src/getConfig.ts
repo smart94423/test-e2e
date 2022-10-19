@@ -14,7 +14,7 @@ type Config = {
 
 let config: null | Config = null
 
-function getConfig() {
+function getConfig(): Config {
   assert(config)
   return config
 }
@@ -36,16 +36,16 @@ function assertConfig(config: unknown): asserts config is Config {
 }
 
 function find(): null | string {
-  let curr = process.cwd()
-  do {
-    const dir = path.dirname(curr)
-    if (dir === curr) {
-      return null
-    }
+  let dir = process.cwd()
+  while (true) {
     const configFilePath = path.join(dir, configFileName)
     if (fs.existsSync(configFilePath)) {
       return configFilePath
     }
-    curr = dir
-  } while (true)
+    const dirPrevious = dir
+    dir = path.dirname(dir)
+    if (dir === dirPrevious) {
+      return null
+    }
+  }
 }
