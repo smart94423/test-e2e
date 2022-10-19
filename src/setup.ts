@@ -110,14 +110,7 @@ function run(
 
     // `runProcess` is `undefined` if `start()` failed.
     if (runProcess) {
-      try {
-        await runProcess.terminate('SIGINT')
-      } catch (err) {
-        Logs.add({
-          logSource: 'run()',
-          logText: String(err),
-        })
-      }
+      await runProcess.terminate('SIGINT')
     }
   }
 
@@ -182,6 +175,8 @@ async function start(): Promise<RunProcess> {
   let rejectServerStart: (err: Error) => void
   const promise = new Promise<RunProcess>((_resolve, _reject) => {
     resolveServerStart = () => {
+      assert(!processHasExited())
+      assert(getRunInfo().cmd === cmd)
       Logs.add({
         logSource: 'run()',
         logText: 'server is ready',
@@ -192,34 +187,28 @@ async function start(): Promise<RunProcess> {
       _resolve(runProcess)
     }
     rejectServerStart = async (err: Error) => {
+      assert(processHasExited())
       assert(getRunInfo().cmd === cmd)
       done(true)
-      Logs.add({
-        logSource: 'run() failure',
-        logText: String(err),
-      })
       clearTimeout(serverStartTimeout)
-      try {
-        await terminate('SIGKILL')
-      } catch (err) {
-        Logs.add({
-          logSource: 'run()',
-          logText: String(err),
-        })
-      }
       _reject(err)
     }
   })
 
   const timeoutTotal = TIMEOUT_NPM_SCRIPT + additionalTimeout
   let hasTimedout = false
-  const serverStartTimeout = setTimeout(() => {
+  const serverStartTimeout = setTimeout(async () => {
+    hasTimedout = true
     let errMsg = ''
     errMsg += `Server still didn't start after ${humanizeTime(timeoutTotal)} of running the npm script \`${cmd}\`.`
     if (serverIsReadyMessage) {
       errMsg += ` (The stdout of the npm script did not include: "${serverIsReadyMessage}".)`
     }
-    hasTimedout = true
+    Logs.add({
+      logSource: 'run() failure',
+      logText: errMsg,
+    })
+    await terminate()
     rejectServerStart(new Error(errMsg))
   }, timeoutTotal)
 
@@ -228,11 +217,13 @@ async function start(): Promise<RunProcess> {
     await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const { terminate } = execRunScript({
-    onError(err) {
+  const { terminate, processHasExited } = execRunScript({
+    async onFailure(err) {
+      assert(processHasExited())
       rejectServerStart(err as Error)
     },
     onExit() {
+      assert(processHasExited())
       const exitIsPossible = hasSuccessfullyStarted === true || hasTimedout
       return exitIsPossible
     },
@@ -252,11 +243,6 @@ async function start(): Promise<RunProcess> {
         await sleep(serverIsReadyDelay)
         resolveServerStart()
         done()
-      }
-    },
-    onStderr(data: string) {
-      if (data.includes('EADDRINUSE')) {
-        rejectServerStart(new Error('Port conflict? Port already in use EADDRINUSE.'))
       }
     },
   })
@@ -335,13 +321,11 @@ function stopProcess({
 
 function execRunScript({
   onStdout,
-  onStderr,
-  onError,
+  onFailure,
   onExit,
 }: {
   onStdout?: (data: string) => void | Promise<void>
-  onStderr?: (data: string) => void | Promise<void>
-  onError: (err: Error) => void | Promise<void>
+  onFailure: (err: Error) => void | Promise<void>
   onExit: () => boolean
 }) {
   const { cwd, cmd } = getRunInfo()
@@ -361,8 +345,17 @@ function execRunScript({
 
   let procExited = false
 
+  const exitAndFail = async (err: Error) => {
+    Logs.add({
+      logText: err.message,
+      logSource: 'run() failure',
+    })
+    await terminate()
+    onFailure(err)
+  }
+
   proc.stdin.on('data', async (data: string) => {
-    onError(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
+    await exitAndFail(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
   })
   proc.stdout.on('data', (data: string) => {
     assert(!procExited)
@@ -374,7 +367,7 @@ function execRunScript({
     })
     onStdout?.(data)
   })
-  proc.stderr.on('data', (data) => {
+  proc.stderr.on('data', async (data) => {
     assert(!procExited)
     assert(getRunInfo().cmd === cmd)
     data = data.toString()
@@ -382,7 +375,9 @@ function execRunScript({
       logSource: 'stderr',
       logText: data,
     })
-    onStderr?.(data)
+    if (data.includes('EADDRINUSE')) {
+      await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
+    }
   })
   proc.on('exit', (code) => {
     procExited = true
@@ -396,16 +391,7 @@ function execRunScript({
         logText: errMsg,
         logSource: 'run() failure',
       })
-      onError(new Error(errMsg))
-      /*
-      try {
-        await terminate('SIGKILL')
-      } catch (err: unknown) {
-        if( !err.code === 'ESRCH' ) {
-          onError(err as Error)
-        }
-      }
-      */
+      onFailure(new Error(errMsg))
     } else {
       Logs.add({
         logText: `Process termination. (Nominal, exit code: ${code}.)`,
@@ -414,9 +400,13 @@ function execRunScript({
     }
   })
 
-  return { terminate }
+  return { terminate, processHasExited }
 
-  async function terminate(signal: 'SIGINT' | 'SIGKILL') {
+  function processHasExited(): boolean {
+    return procExited
+  }
+
+  async function terminate(signal: 'SIGINT' | 'SIGKILL' = 'SIGKILL') {
     let resolve!: () => void
     let reject!: (err: Error) => void
     const promise = new Promise<void>((_resolve, _reject) => {
@@ -425,15 +415,28 @@ function execRunScript({
     })
 
     const timeout = setTimeout(() => {
-      reject(new Error('Process termination timeout. Cmd: ' + cmd))
+      const errMsg = 'Process termination timeout. Cmd: ' + cmd
+      Logs.add({
+        logSource: 'run() failure',
+        logText: errMsg,
+      })
+      reject(new Error(errMsg))
     }, TIMEOUT_PROCESS_TERMINATION)
+
     assert(proc)
-    await stopProcess({
-      proc,
-      cwd,
-      cmd,
-      signal,
-    })
+    try {
+      await stopProcess({
+        proc,
+        cwd,
+        cmd,
+        signal,
+      })
+    } catch (err) {
+      Logs.add({
+        logSource: 'run() failure',
+        logText: String(err),
+      })
+    }
     clearTimeout(timeout)
     resolve()
 
