@@ -2,7 +2,17 @@ import { spawn } from 'child_process'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
-import { runCommand, sleep, logProgress, cliConfig, humanizeTime } from './utils'
+import {
+  runCommand,
+  sleep,
+  logProgress,
+  cliConfig,
+  humanizeTime,
+  isWindows,
+  isLinux,
+  isGithubAction,
+  isMac,
+} from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
@@ -519,23 +529,6 @@ function isMinNodeVersion(minNodeVersion: 14) {
   const major = parseInt(version[1] + version[2], 10)
   assert(12 <= major && major <= 50)
   return major >= minNodeVersion
-}
-
-function isWindows() {
-  return process.platform === 'win32'
-}
-function isLinux() {
-  return process.platform === 'linux'
-}
-function isMac() {
-  if (process.platform === 'darwin') {
-    return true
-  }
-  assert(isLinux() || isWindows())
-  return false
-}
-function isGithubAction() {
-  return !!process.env.CI
 }
 
 function getCwd() {

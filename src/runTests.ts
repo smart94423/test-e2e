@@ -3,7 +3,7 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from './utils'
 import { white, bgGreen, bgRed, bgYellow, bold } from 'picocolors'
 
 const logsContainError_errMsg = 'The browser/server threw/logged one or more error/warning, see logs below.'
@@ -42,7 +42,7 @@ async function runTests(browser: Browser) {
   } catch (err) {
     logTestsResult(false)
     console.log(err)
-    Logs.flush()
+    Logs.flushLogs()
     process.exit(1)
   }
 
@@ -61,7 +61,7 @@ async function runTests(browser: Browser) {
     done(!!err)
     testInfo.afterEach(!!err)
 
-    const hasErrorLog = Logs.hasError(testInfo.runInfo.onlyFailOnBrowserError)
+    const hasErrorLog = Logs.hasErrorLogs(testInfo.runInfo.onlyFailOnBrowserError)
     const isFailure = err || hasErrorLog
     if (isFailure) {
       logTestsResult(false)
@@ -71,19 +71,25 @@ async function runTests(browser: Browser) {
       if (hasErrorLog) {
         console.log(new Error(logsContainError_errMsg))
       }
-      Logs.flush()
+      Logs.flushLogs()
       process.exit(1)
     } else {
-      Logs.clear()
+      Logs.clearLogs()
     }
   }
 
   await testInfo.terminateServer()
   await page.close()
   // Handle case that an error occured during `terminateServer()`
-  if (Logs.hasError()) {
-    console.log(new Error(logsContainError_errMsg))
-    Logs.flush()
+  if (Logs.hasErrorLogs()) {
+    if (isWindows()) {
+      // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
+      Logs.clearLogs()
+    } else {
+      console.log(new Error(logsContainError_errMsg))
+      Logs.flushLogs()
+      process.exit(1)
+    }
   }
 
   logTestsResult(true)

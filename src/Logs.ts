@@ -1,9 +1,9 @@
 export { expectError }
 export const Logs = {
   add,
-  flush,
-  clear,
-  hasError,
+  flushLogs,
+  clearLogs,
+  hasErrorLogs,
   flushEagerly: false,
 }
 
@@ -30,9 +30,8 @@ type LogEntry = {
   isNotFailure: boolean
 }
 let logEntries: LogEntry[] = []
-let logEntriesNotPrinted: LogEntry[] = []
 
-function hasError(onlyFailOnBrowserError: boolean = false): boolean {
+function hasErrorLogs(onlyFailOnBrowserError: boolean = false): boolean {
   const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
@@ -51,14 +50,13 @@ function hasError(onlyFailOnBrowserError: boolean = false): boolean {
   return logErrors.length > 0
 }
 
-function clear() {
+function clearLogs() {
   logEntries = []
-  logEntriesNotPrinted = []
 }
 
-function flush() {
-  logEntriesNotPrinted.forEach((logEntry) => printLog(logEntry))
-  logEntriesNotPrinted = []
+function flushLogs() {
+  logEntries.forEach((logEntry) => printLog(logEntry))
+  logEntries = []
 }
 function add({ logSource, logText }: { logSource: LogSource; logText: string }) {
   const logTimestamp = getTimestamp()
@@ -80,10 +78,9 @@ function add({ logSource, logText }: { logSource: LogSource; logText: string }) 
     logTimestamp,
     isNotFailure,
   }
-  logEntriesNotPrinted.push(logEntry)
   logEntries.push(logEntry)
   if (Logs.flushEagerly) {
-    flush()
+    flushLogs()
   }
 }
 
