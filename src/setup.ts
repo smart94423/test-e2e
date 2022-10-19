@@ -15,7 +15,7 @@ export { partRegex } from '@brillout/part-regex'
 export { autoRetry }
 export { fetchHtml }
 export { fetch }
-export { expectBrowserError } from './Logs'
+export { expectError } from './Logs'
 export { run }
 export { skip }
 export { isMinNodeVersion }

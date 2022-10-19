@@ -1,4 +1,4 @@
-export { expectBrowserError }
+export { expectError }
 export const Logs = {
   add,
   flush,
@@ -25,14 +25,14 @@ type LogEntry = {
   logSource: LogSource
   logText: string
   logTimestamp: string
-  isExpectedError: boolean
+  isNotFailure: boolean
 }
 let logEntries: LogEntry[] = []
 let logEntriesNotPrinted: LogEntry[] = []
 
 function hasError(onlyFailOnBrowserError: boolean): boolean {
-  const logErrors = logEntries.filter(({ logSource, isExpectedError }) => {
-    if (isExpectedError) {
+  const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
+    if (isNotFailure) {
       return
     }
     if (!onlyFailOnBrowserError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
@@ -61,7 +61,7 @@ function add({ logSource, logText }: { logSource: LogSource; logText: string }) 
     logSource,
     logText,
     logTimestamp,
-    isExpectedError: false,
+    isNotFailure: false,
   }
   logEntriesNotPrinted.push(logEntry)
   logEntries.push(logEntry)
@@ -70,16 +70,16 @@ function add({ logSource, logText }: { logSource: LogSource; logText: string }) 
   }
 }
 
-function expectBrowserError(browserLogFilter: (browserLog: LogEntry) => boolean) {
-  const found = !!logEntries.find((logEntry) => {
-    if (browserLogFilter(logEntry)) {
-      logEntry.isExpectedError = true
+function expectError(logFilter: (browserLog: LogEntry) => boolean) {
+  const logFounds = logEntries.filter((logEntry) => {
+    if (logFilter(logEntry)) {
+      logEntry.isNotFailure = true
       return true
     }
     return false
   })
-  //expect(found).toBe(true)
-  assert(found === true)
+  //expect(logFounds.length).not.toBe(0)
+  assert(logFounds.length > 0)
 }
 
 function getTimestamp() {
