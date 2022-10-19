@@ -20,6 +20,7 @@ type LogSource =
   | 'Browser Log'
   | 'Playwright'
   | 'run()'
+  | 'run() failure'
   | 'test()'
   | 'Connection Error'
 type LogEntry = {
@@ -35,6 +36,9 @@ function hasError(onlyFailOnBrowserError: boolean): boolean {
   const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
+    }
+    if (logSource === 'run() failure') {
+      return true
     }
     if (!onlyFailOnBrowserError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
@@ -131,11 +135,25 @@ function printLog(logEntry: LogEntry) {
 
 function colorize(logSource: LogSource): string {
   const { bold } = pc
-  if (logSource === 'stderr' || logSource === 'Browser Error' || logSource === 'Connection Error')
+  if (
+    logSource === 'stderr' ||
+    logSource === 'Browser Error' ||
+    logSource === 'Connection Error' ||
+    logSource === 'run() failure'
+  ) {
     return bold(pc.red(logSource))
-  if (logSource === 'Browser Warning') return bold(pc.yellow(logSource))
-  if (logSource === 'stdout' || logSource === 'Browser Log') return bold(pc.blue(logSource))
-  if (logSource === 'Playwright') return bold(pc.magenta(logSource))
-  if (logSource === 'run()' || logSource === 'test()') return bold(pc.cyan(logSource))
+  }
+  if (logSource === 'Browser Warning') {
+    return bold(pc.yellow(logSource))
+  }
+  if (logSource === 'stdout' || logSource === 'Browser Log') {
+    return bold(pc.blue(logSource))
+  }
+  if (logSource === 'Playwright') {
+    return bold(pc.magenta(logSource))
+  }
+  if (logSource === 'run()' || logSource === 'test()') {
+    return bold(pc.cyan(logSource))
+  }
   assert(false)
 }

@@ -192,9 +192,10 @@ async function start(): Promise<RunProcess> {
       _resolve(runProcess)
     }
     rejectServerStart = async (err: Error) => {
+      assert(getRunInfo().cmd === cmd)
       done(true)
       Logs.add({
-        logSource: 'stderr',
+        logSource: 'run() failure',
         logText: String(err),
       })
       clearTimeout(serverStartTimeout)
@@ -361,7 +362,8 @@ function execRunScript({
   proc.stdin.on('data', async (data: string) => {
     onError(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
   })
-  proc.stdout.on('data', async (data: string) => {
+  proc.stdout.on('data', (data: string) => {
+    assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
       logSource: 'stdout',
@@ -369,7 +371,8 @@ function execRunScript({
     })
     onStdout?.(data)
   })
-  proc.stderr.on('data', async (data) => {
+  proc.stderr.on('data', (data) => {
+    assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
       logSource: 'stderr',
@@ -377,7 +380,8 @@ function execRunScript({
     })
     onStderr?.(data)
   })
-  proc.on('exit', async (code) => {
+  proc.on('exit', (code) => {
+    assert(getRunInfo().cmd === cmd)
     const exitIsPossible = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
     const isExpected = isSuccessCode && exitIsPossible
@@ -385,7 +389,7 @@ function execRunScript({
       const errMsg = `Unexpected premature process termination, exit code: ${code}`
       Logs.add({
         logText: errMsg,
-        logSource: 'stderr',
+        logSource: 'run() failure',
       })
       onError(new Error(errMsg))
       /*
