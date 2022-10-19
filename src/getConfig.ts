@@ -3,7 +3,7 @@ export { loadConfig }
 
 import path from 'path'
 import fs from 'fs'
-import { assert, assertUsage, isCallable, isObject } from './utils'
+import { assert, assertUsage, fsWindowsBugWorkaround, isCallable, isObject } from './utils'
 
 const configFileName = 'test-e2e.config.mjs'
 const errPrefix = `Config file \`${configFileName}\` `
@@ -22,7 +22,7 @@ function getConfig(): Config {
 async function loadConfig(): Promise<void> {
   const configFilePath = find()
   assertUsage(configFilePath, errPrefix + 'not found')
-  const configFileExports = (await import(configFilePath)) as Record<string, unknown>
+  const configFileExports = (await import(fsWindowsBugWorkaround(configFilePath))) as Record<string, unknown>
   assertUsage('default' in configFileExports, errPrefix + 'should have a default export')
   assertConfig(configFileExports.default)
   config = configFileExports.default
