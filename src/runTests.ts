@@ -67,7 +67,7 @@ async function runTests(browser: Browser) {
         console.error(err)
       }
       if (hasErrorLog) {
-        console.log(new Error('The browser/server threw/logged one or more error, see logs below.'))
+        console.log(new Error('The browser/server threw/logged one or more error/warning, see logs below.'))
       }
       Logs.flush()
       process.exit(1)
