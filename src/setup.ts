@@ -110,7 +110,14 @@ function run(
 
     // `runProcess` is `undefined` if `start()` failed.
     if (runProcess) {
-      await runProcess.terminate('SIGINT')
+      try {
+        await runProcess.terminate('SIGINT')
+      } catch (err) {
+        Logs.add({
+          logSource: 'run()',
+          logText: String(err),
+        })
+      }
     }
   }
 
@@ -288,7 +295,19 @@ function stopProcess({
   if (isWindows()) {
     // - https://github.com/nodejs/node/issues/3617#issuecomment-377731194
     // - https://stackoverflow.com/questions/23706055/why-can-i-not-kill-my-child-process-in-nodejs-on-windows/28163919#28163919
-    spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], { stdio: ['ignore', 'ignore', 'inherit'] })
+    spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
+      stdio: [
+        'ignore', // stdin
+        'ignore', // stdout
+        // Should we ignore `stderr`? Because `taskkill` somtimes throws:
+        // ```
+        // ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
+        // Reason: There is no running instance of the task.
+        // ```
+        // There doesn't seem to be an option to suppress that error: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
+        'inherit', // stderr
+      ],
+    })
   } else {
     assert(proc.pid)
     const processGroup = -1 * proc.pid
