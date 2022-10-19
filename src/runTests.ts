@@ -119,7 +119,7 @@ function logTestsResult(success: boolean) {
     return
   }
   if (testInfo.skipped) {
-    console.log(`${skipStyle('SKIP')} ${testInfo.testFile} (${testInfo.skipped})`)
+    console.log(`${skipStyle('WARN')} ${testInfo.testFile} (${testInfo.skipped})`)
   } else {
     console.log(`${failStyle('FAIL')} ${testInfo.testFile}`)
   }
