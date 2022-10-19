@@ -32,7 +32,7 @@ type LogEntry = {
 let logEntries: LogEntry[] = []
 let logEntriesNotPrinted: LogEntry[] = []
 
-function hasError(onlyFailOnBrowserError: boolean): boolean {
+function hasError(onlyFailOnBrowserError: boolean = false): boolean {
   const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return

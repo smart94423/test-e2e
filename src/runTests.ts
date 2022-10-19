@@ -6,6 +6,8 @@ import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { white, bgGreen, bgRed, bgYellow, bold } from 'picocolors'
 
+const logsContainError_errMsg = 'The browser/server threw/logged one or more error/warning, see logs below.'
+
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
 
@@ -67,7 +69,7 @@ async function runTests(browser: Browser) {
         console.error(err)
       }
       if (hasErrorLog) {
-        console.log(new Error('The browser/server threw/logged one or more error/warning, see logs below.'))
+        console.log(new Error(logsContainError_errMsg))
       }
       Logs.flush()
       process.exit(1)
@@ -78,6 +80,12 @@ async function runTests(browser: Browser) {
 
   await testInfo.terminateServer()
   await page.close()
+  // Handle case that an error occured during `terminateServer()`
+  if (Logs.hasError()) {
+    console.log(new Error(logsContainError_errMsg))
+    Logs.flush()
+  }
+
   logTestsResult(true)
 }
 
