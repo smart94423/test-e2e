@@ -359,10 +359,13 @@ function execRunScript({
   })
   const proc = spawn(command, args, { cwd, detached })
 
+  let procExited = false
+
   proc.stdin.on('data', async (data: string) => {
     onError(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
   })
   proc.stdout.on('data', (data: string) => {
+    assert(!procExited)
     assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
@@ -372,6 +375,7 @@ function execRunScript({
     onStdout?.(data)
   })
   proc.stderr.on('data', (data) => {
+    assert(!procExited)
     assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
@@ -381,6 +385,7 @@ function execRunScript({
     onStderr?.(data)
   })
   proc.on('exit', (code) => {
+    procExited = true
     assert(getRunInfo().cmd === cmd)
     const exitIsPossible = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
