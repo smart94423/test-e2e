@@ -105,6 +105,10 @@ function run(
     }
   }
   testInfo.terminateServer = async () => {
+    Logs.add({
+      logSource: 'run()',
+      logText: 'Terminate server.',
+    })
     page.off('console', onConsole)
     page.off('pageerror', onPageError)
 
@@ -179,7 +183,7 @@ async function start(): Promise<RunProcess> {
       assert(getRunInfo().cmd === cmd)
       Logs.add({
         logSource: 'run()',
-        logText: 'server is ready',
+        logText: 'Server is ready.',
       })
       hasSuccessfullyStarted = true
       clearTimeout(serverStartTimeout)
@@ -379,6 +383,8 @@ function execRunScript({
       await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
     }
   })
+  let exitPromiseResolve!: () => void
+  const exitPromise = new Promise<void>((r) => (exitPromiseResolve = r))
   proc.on('exit', (code) => {
     procExited = true
     assert(getRunInfo().cmd === cmd)
@@ -398,6 +404,7 @@ function execRunScript({
         logSource: 'run()',
       })
     }
+    exitPromiseResolve()
   })
 
   return { terminate, processHasExited }
@@ -438,6 +445,7 @@ function execRunScript({
       })
     }
     clearTimeout(timeout)
+    await exitPromise
     resolve()
 
     return promise
