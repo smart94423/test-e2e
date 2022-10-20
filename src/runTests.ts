@@ -4,9 +4,10 @@ import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from './utils'
-import { white, bgGreen, bgRed, bgYellow, bold } from 'picocolors'
+import pc from 'picocolors'
 
-const logsContainError_errMsg = 'The browser/server threw/logged one or more error/warning, see logs below.'
+const logsContainError_errMsg = (isTermination: boolean) =>
+  [pc.bold('Error/warning'), !isTermination ? '' : ' during termination', ', see logs below.'].join(' ')
 
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
@@ -69,7 +70,7 @@ async function runTests(browser: Browser) {
         console.error(err)
       }
       if (hasErrorLog) {
-        console.log(new Error(logsContainError_errMsg))
+        console.log(logsContainError_errMsg(false))
       }
       Logs.flushLogs()
       process.exit(1)
@@ -86,7 +87,7 @@ async function runTests(browser: Browser) {
       // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
       Logs.clearLogs()
     } else {
-      console.log(new Error(logsContainError_errMsg))
+      console.log(logsContainError_errMsg(true))
       Logs.flushLogs()
       process.exit(1)
     }
@@ -124,17 +125,17 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
 
 function logTestsResult(success: boolean) {
   const testInfo = getCurrentTest()
-  const passStyle = (t: string) => bold(white(bgGreen(t)))
-  const failStyle = (t: string) => bold(white(bgRed(t)))
-  const skipStyle = (t: string) => bold(white(bgYellow(t)))
+  const passStyle = (t: string) => pc.bold(pc.bgGreen(t))
+  const failStyle = (t: string) => pc.bold(pc.bgRed(t))
+  const skipStyle = (t: string) => pc.bold(pc.bgYellow(t))
   if (success) {
     assert(!testInfo.skipped)
-    console.log(`${passStyle('PASS')} ${testInfo.testFile}`)
+    console.log(`${passStyle(' PASS ')} ${testInfo.testFile}`)
     return
   }
   if (testInfo.skipped) {
-    console.log(`${skipStyle('WARN')} ${testInfo.testFile} (${testInfo.skipped})`)
+    console.log(`${skipStyle(' WARN ')} ${testInfo.testFile} (${testInfo.skipped})`)
   } else {
-    console.log(`${failStyle('FAIL')} ${testInfo.testFile}`)
+    console.log(`${failStyle(' FAIL ')} ${testInfo.testFile}`)
   }
 }
