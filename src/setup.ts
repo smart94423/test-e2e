@@ -249,17 +249,17 @@ async function start(): Promise<RunProcess> {
       return exitIsPossible
     },
     async onStdout(data: string) {
-      const text = stripAnsi(data)
+      const log = stripAnsi(data)
       const isServerReady =
         // Custom
-        (typeof serverIsReadyMessage === 'string' && text.includes(serverIsReadyMessage)) ||
-        (isCallable(serverIsReadyMessage) && serverIsReadyMessage(text)) ||
+        (typeof serverIsReadyMessage === 'string' && log.includes(serverIsReadyMessage)) ||
+        (isCallable(serverIsReadyMessage) && serverIsReadyMessage(log)) ||
         // Express.js server
-        text.includes('Server running at') ||
+        log.includes('Server running at') ||
         // npm package `serve`
-        text.includes('Accepting connections at') ||
+        log.includes('Accepting connections at') ||
         // Vite
-        (text.includes('Local:') && text.includes('http://localhost:3000/'))
+        (log.includes('Local:') && log.includes('http://localhost:3000/'))
       if (isServerReady) {
         assert(serverIsReadyDelay)
         await sleep(serverIsReadyDelay)
