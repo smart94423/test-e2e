@@ -230,9 +230,11 @@ async function start(): Promise<RunProcess> {
     rejectServerStart(new Error(errMsg))
   }, timeoutTotal)
 
-  // Kill any process that listens to port `3000`
+  // Kill any process that listens to the server port
   if (!process.env.CI && isLinux()) {
-    await runCommand('fuser -k 3000/tcp', { swallowError: true, timeout: 10 * 1000 })
+    const port = getPort()
+    assert(/\d+/.test(port))
+    await runCommand(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
   }
 
   const { terminate, processHasExited } = execRunScript({
@@ -545,4 +547,11 @@ function getServerUrl(): string {
   const testInfo = getCurrentTest()
   const serverUrl = testInfo.runInfo?.serverUrl!
   return serverUrl
+}
+
+function getPort(): string {
+  const serverUrl = getServerUrl()
+  const port = serverUrl.split(':').slice(-1)[0]!.split('/')[0]
+  assert(/\d+/.test(port), { serverUrl })
+  return port
 }
