@@ -105,7 +105,7 @@ function run(
     /*
     await bailOnTimeout(
       async () => {
-        await page.goto(urlBase + baseUrl)
+        await page.goto(getServerUrl() + baseUrl)
       },
       { timeout: TIMEOUT_PAGE_LOAD + additionalTimeout },
     )
