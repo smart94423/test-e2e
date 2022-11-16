@@ -1,4 +1,3 @@
-export function isCallable<T extends Function>(thing: T | unknown): thing is T {
+export function isCallable(thing: unknown): thing is Function {
   return thing instanceof Function || typeof thing === 'function'
 }
-

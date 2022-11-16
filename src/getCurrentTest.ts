@@ -19,7 +19,7 @@ type TestInfo = {
     cwd: string
     testFunctionTimeout: number
     additionalTimeout: number
-    serverIsReadyMessage?: string
+    serverIsReadyMessage?: string | ((log: string) => boolean)
     serverIsReadyDelay: number
     inspect: boolean
     onlyFailOnBrowserError: boolean

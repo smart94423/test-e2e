@@ -12,6 +12,7 @@ import {
   isLinux,
   isGithubAction,
   isMac,
+  isCallable,
 } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
@@ -64,7 +65,7 @@ function run(
   }: {
     //baseUrl?: string
     additionalTimeout?: number
-    serverIsReadyMessage?: string
+    serverIsReadyMessage?: string | ((log: string) => boolean)
     serverIsReadyDelay?: number
     inspect?: boolean
     cwd?: string
@@ -251,7 +252,8 @@ async function start(): Promise<RunProcess> {
       const text = stripAnsi(data)
       const isServerReady =
         // Custom
-        (serverIsReadyMessage && text.includes(serverIsReadyMessage)) ||
+        (typeof serverIsReadyMessage === 'string' && text.includes(serverIsReadyMessage)) ||
+        (isCallable(serverIsReadyMessage) && serverIsReadyMessage(text)) ||
         // Express.js server
         text.includes('Server running at') ||
         // npm package `serve`
