@@ -34,9 +34,10 @@ export { isLinux }
 export { isWindows }
 export { isMac }
 export { sleep }
-export let urlBase = 'http://localhost:3000'
-export const urlBaseChange = (url: string) => (urlBase = url)
+export { getServerUrl }
 export { editFile, editFileRevert } from './editFile'
+
+const serverUrlDefault = 'http://localhost:3000'
 
 const TIMEOUT_NPM_SCRIPT = 2 * 60 * 1000
 const TIMEOUT_TEST_FUNCTION = 60 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 5 : 3)
@@ -59,6 +60,7 @@ function run(
     inspect = cliConfig.inspect,
     cwd,
     onlyFailOnBrowserError = false,
+    serverUrl = serverUrlDefault,
   }: {
     //baseUrl?: string
     additionalTimeout?: number
@@ -67,6 +69,7 @@ function run(
     inspect?: boolean
     cwd?: string
     onlyFailOnBrowserError?: boolean
+    serverUrl?: string
   } = {}
 ) {
   additionalTimeout += serverIsReadyDelay
@@ -81,6 +84,7 @@ function run(
     serverIsReadyDelay,
     inspect,
     onlyFailOnBrowserError,
+    serverUrl,
   }
 
   if (inspect) {
@@ -484,7 +488,7 @@ async function autoRetry(
 }
 
 async function fetchHtml(pathname: string) {
-  const response = await fetch(urlBase + pathname)
+  const response = await fetch(getServerUrl() + pathname)
   const html = await response.text()
   return html
 }
@@ -535,4 +539,10 @@ function getCwd() {
   const { testFile } = getCurrentTest()
   const cwd = dirname(testFile)
   return cwd
+}
+
+function getServerUrl(): string {
+  const testInfo = getCurrentTest()
+  const serverUrl = testInfo.runInfo?.serverUrl!
+  return serverUrl
 }

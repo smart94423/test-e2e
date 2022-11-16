@@ -23,6 +23,7 @@ type TestInfo = {
     serverIsReadyDelay: number
     inspect: boolean
     onlyFailOnBrowserError: boolean
+    serverUrl: string
   }
   hasStartedRunning?: boolean
   skipped?: string
