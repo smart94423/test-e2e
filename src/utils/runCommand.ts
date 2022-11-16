@@ -4,7 +4,11 @@ export { runCommand }
 
 function runCommand(
   cmd: string,
-  { swallowError, timeout = 5000, cwd }: { swallowError?: true; timeout?: number; cwd?: string } = {}
+  {
+    swallowError = false,
+    timeout = 5000,
+    cwd = process.cwd(),
+  }: { swallowError?: boolean; timeout?: number; cwd?: string } = {}
 ): Promise<string> {
   const { promise, resolvePromise } = genPromise<string>()
 
