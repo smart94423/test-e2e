@@ -7,7 +7,9 @@ import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from
 import pc from 'picocolors'
 
 const logsContainError_errMsg = (isTermination: boolean) =>
-  [pc.bold('Error/warning'), !isTermination ? '' : ' during termination', ', see logs below.'].join(' ')
+  [pc.bold('Encountered an error or warning'), !isTermination ? '' : ' during termination', ', see logs below.'].join(
+    ''
+  )
 
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
