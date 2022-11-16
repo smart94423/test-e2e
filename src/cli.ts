@@ -2,9 +2,11 @@ import sourceMapSupport from 'source-map-support'
 import { assert, findFilesParseCliArgs, fsWindowsBugWorkaroundPrefix } from './utils'
 import { runTestSuites } from './runTestSuites'
 import { sourceMaps } from './buildTs'
+import { Logs } from './Logs'
 
 initSourceMap()
 initPromiseRejectionHandler()
+initUserExitHandler()
 cli()
 
 function cli() {
@@ -16,6 +18,12 @@ function initPromiseRejectionHandler() {
   process.on('unhandledRejection', function (err) {
     console.error(err)
     process.exit(1)
+  })
+}
+
+function initUserExitHandler() {
+  process.on('SIGINT', function () {
+    Logs.flushLogs()
   })
 }
 
