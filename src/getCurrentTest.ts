@@ -22,7 +22,7 @@ type TestInfo = {
     serverIsReadyMessage?: string | ((log: string) => boolean)
     serverIsReadyDelay: number
     inspect: boolean
-    onlyFailOnBrowserError: boolean
+    doNotFailOnWarning: boolean
     serverUrl: string
   }
   hasStartedRunning?: boolean

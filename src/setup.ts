@@ -60,7 +60,7 @@ function run(
     serverIsReadyDelay = 1000,
     inspect = cliConfig.inspect,
     cwd,
-    onlyFailOnBrowserError = false,
+    doNotFailOnWarning = false,
     serverUrl = serverUrlDefault,
   }: {
     //baseUrl?: string
@@ -69,7 +69,7 @@ function run(
     serverIsReadyDelay?: number
     inspect?: boolean
     cwd?: string
-    onlyFailOnBrowserError?: boolean
+    doNotFailOnWarning?: boolean
     serverUrl?: string
   } = {}
 ) {
@@ -84,7 +84,7 @@ function run(
     serverIsReadyMessage,
     serverIsReadyDelay,
     inspect,
-    onlyFailOnBrowserError,
+    doNotFailOnWarning,
     serverUrl,
   }
 

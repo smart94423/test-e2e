@@ -31,7 +31,7 @@ type LogEntry = {
 }
 let logEntries: LogEntry[] = []
 
-function hasErrorLogs(onlyFailOnBrowserError: boolean = false): boolean {
+function hasErrorLogs(doNotFailOnWarning: boolean = false): boolean {
   const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
@@ -39,7 +39,7 @@ function hasErrorLogs(onlyFailOnBrowserError: boolean = false): boolean {
     if (logSource === 'run() failure') {
       return true
     }
-    if (!onlyFailOnBrowserError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+    if (!doNotFailOnWarning && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
     }
     if (logSource === 'Browser Error') {
