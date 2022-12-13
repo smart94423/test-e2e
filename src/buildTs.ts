@@ -17,7 +17,7 @@ async function buildTs(entry: string, outfile: string): Promise<() => void> {
     format: 'esm',
     target: 'es2020',
     bundle: true,
-    external: ['./node_modules/*', '@brillout/test-e2e'],
+    packages: 'external',
     minify: false,
   })
   {

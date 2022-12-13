@@ -15,7 +15,7 @@
   "dependencies": {
     "@brillout/part-regex": "^0.1.2",
     "chai": "^4.3.6",
-    "esbuild": "^0.15.9",
+    "esbuild": "^0.16.5",
     "fast-glob": "^3.2.12",
     "node-fetch": "^2.6.1",
     "picocolors": "^1.0.0",
