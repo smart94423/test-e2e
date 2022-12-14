@@ -56,20 +56,20 @@ async function takeScreenshot(): Promise<PNGWithMetadata> {
   assert(page)
   let screenshotCurr: undefined | PNGWithMetadata
   let screenshotPrev: undefined | PNGWithMetadata
-  let attemps = 30
+  let attemps = 15
   while (attemps-- > 0) {
     screenshotPrev = screenshotCurr
     screenshotCurr = PNG.sync.read(await page.screenshot())
     if (screenshotPrev) {
       const { width, height } = screenshotCurr
       const numDiffPixels = pixelmatch(screenshotPrev.data, screenshotCurr.data, null, width, height, {
-        threshold: 0.1,
+        threshold: 0,
       })
       if (numDiffPixels === 0) {
         return screenshotCurr
       }
     }
-    await sleep(300)
+    await sleep(1000)
   }
   throw new Error("Couldn't take a stable screenshot. The UI seems to be continously changing.")
 }
