@@ -3,17 +3,17 @@ export { testScreenshotFixture }
 // Reference implementation: https://playwright.dev/docs/test-snapshots
 
 import pixelmatch from 'pixelmatch'
-import { PNG } from 'pngjs'
+import { PNG, type PNGWithMetadata } from 'pngjs'
 import fs from 'fs'
 import path from 'path'
-import { assert } from './utils'
+import { assert, sleep } from './utils'
 import { getCurrentTest } from './getCurrentTest'
 import { expect } from './chai/expect'
 
 async function testScreenshotFixture(): Promise<void> {
   const { pngFixturPath, pngExpectPath, pngActualPath, pngDifferPath } = getPngPaths()
   if (!fs.existsSync(pngFixturPath)) {
-    const pngActual = PNG.sync.read(await takeScreenshot())
+    const pngActual = await takeScreenshot()
     const fileContent = PNG.sync.write(pngActual)
     fs.writeFileSync(pngFixturPath, fileContent)
     fs.writeFileSync(pngExpectPath, fileContent)
@@ -26,7 +26,7 @@ async function testScreenshotFixture(): Promise<void> {
     )
   }
   const pngExpect = PNG.sync.read(fs.readFileSync(pngFixturPath))
-  const pngActual = PNG.sync.read(await takeScreenshot())
+  const pngActual = await takeScreenshot()
   expect(pngExpect.width).toBe(pngActual.width)
   expect(pngExpect.height).toBe(pngActual.height)
   const { width, height } = pngExpect
@@ -51,10 +51,27 @@ async function testScreenshotFixture(): Promise<void> {
   }
 }
 
-function takeScreenshot(): Promise<Buffer> {
+async function takeScreenshot(): Promise<PNGWithMetadata> {
   const { page } = getCurrentTest()
   assert(page)
-  return page.screenshot()
+  let screenshotCurr: undefined | PNGWithMetadata
+  let screenshotPrev: undefined | PNGWithMetadata
+  let attemps = 30
+  while (attemps-- > 0) {
+    screenshotPrev = screenshotCurr
+    screenshotCurr = PNG.sync.read(await page.screenshot())
+    if (screenshotPrev) {
+      const { width, height } = screenshotCurr
+      const numDiffPixels = pixelmatch(screenshotPrev.data, screenshotCurr.data, null, width, height, {
+        threshold: 0.1,
+      })
+      if (numDiffPixels === 0) {
+        return screenshotCurr
+      }
+    }
+    await sleep(300)
+  }
+  throw new Error("Couldn't take a stable screenshot. The UI seems to be continously changing.")
 }
 
 function getPngPaths() {
