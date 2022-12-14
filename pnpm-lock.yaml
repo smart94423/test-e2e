@@ -5,13 +5,17 @@ specifiers:
   '@types/chai': ^4.3.3
   '@types/node': ^15.6.1
   '@types/node-fetch': ^2.5.12
+  '@types/pixelmatch': ^5.2.4
+  '@types/pngjs': ^6.0.1
   '@types/source-map-support': ^0.5.6
   chai: ^4.3.6
   esbuild: ^0.16.5
   fast-glob: ^3.2.12
   node-fetch: ^2.6.1
   picocolors: ^1.0.0
+  pixelmatch: ^5.3.0
   playwright-chromium: ^1.22.2
+  pngjs: ^6.0.0
   source-map-support: ^0.5.21
   strip-ansi: ^6.0.1
   typescript: ^4.8.3
@@ -23,7 +27,9 @@ dependencies:
   fast-glob: 3.2.12
   node-fetch: 2.6.7
   picocolors: 1.0.0
+  pixelmatch: 5.3.0
   playwright-chromium: 1.26.0
+  pngjs: 6.0.0
   source-map-support: 0.5.21
   strip-ansi: 6.0.1
 
@@ -31,6 +37,8 @@ devDependencies:
   '@types/chai': 4.3.3
   '@types/node': 15.14.9
   '@types/node-fetch': 2.6.2
+  '@types/pixelmatch': 5.2.4
+  '@types/pngjs': 6.0.1
   '@types/source-map-support': 0.5.6
   typescript: 4.8.3
 
@@ -274,6 +282,18 @@ packages:
     resolution: {integrity: sha512-qjd88DrCxupx/kJD5yQgZdcYKZKSIGBVDIBE1/LTGcNm3d2Np/jxojkdePDdfnBHJc5W7vSMpbJ1aB7p/Py69A==}
     dev: true
 
+  /@types/pixelmatch/5.2.4:
+    resolution: {integrity: sha512-HDaSHIAv9kwpMN7zlmwfTv6gax0PiporJOipcrGsVNF3Ba+kryOZc0Pio5pn6NhisgWr7TaajlPEKTbTAypIBQ==}
+    dependencies:
+      '@types/node': 15.14.9
+    dev: true
+
+  /@types/pngjs/6.0.1:
+    resolution: {integrity: sha512-J39njbdW1U/6YyVXvC9+1iflZghP8jgRf2ndYghdJb5xL49LYDB+1EuAxfbuJ2IBbWIL3AjHPQhgaTxT3YaYeg==}
+    dependencies:
+      '@types/node': 15.14.9
+    dev: true
+
   /@types/source-map-support/0.5.6:
     resolution: {integrity: sha512-b2nJ9YyXmkhGaa2b8VLM0kJ04xxwNyijcq12/kDoomCt43qbHBeK2SLNJ9iJmETaAj+bKUT05PQUu3Q66GvLhQ==}
     dependencies:
@@ -487,6 +507,13 @@ packages:
     engines: {node: '>=8.6'}
     dev: false
 
+  /pixelmatch/5.3.0:
+    resolution: {integrity: sha512-o8mkY4E/+LNUf6LzX96ht6k6CEDi65k9G2rjMtBe9Oo+VPKSvl+0GKHuH/AlG+GA5LPG/i5hrekkxUc3s2HU+Q==}
+    hasBin: true
+    dependencies:
+      pngjs: 6.0.0
+    dev: false
+
   /playwright-chromium/1.26.0:
     resolution: {integrity: sha512-4hDiVmMKmtuHW5ne11S1HCQTdL+wytprQMhWYecEjMSIKBR1DJ3JLrcUDgqA0L5Jzi/CBKYQQk6TOVlTjXybXQ==}
     engines: {node: '>=14'}
@@ -500,6 +527,11 @@ packages:
     resolution: {integrity: sha512-p8huU8eU4gD3VkJd3DA1nA7R3XA6rFvFL+1RYS96cSljCF2yJE9CWEHTPF4LqX8KN9MoWCrAfVKP5381X3CZqg==}
     engines: {node: '>=14'}
     hasBin: true
+    dev: false
+
+  /pngjs/6.0.0:
+    resolution: {integrity: sha512-TRzzuFRRmEoSW/p1KVAmiOgPco2Irlah+bGFCeNfJXxxYGwSw7YwAOAcd7X28K/m5bjBWKsC29KyoMfHbypayg==}
+    engines: {node: '>=12.13.0'}
     dev: false
 
   /queue-microtask/1.2.3:

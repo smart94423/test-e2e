@@ -36,7 +36,6 @@ export { isWindows }
 export { isMac }
 export { sleep }
 export { getServerUrl }
-export { editFile, editFileRevert } from './editFile'
 
 const serverUrlDefault = 'http://localhost:3000'
 
