@@ -16,13 +16,8 @@ async function testScreenshotFixture(): Promise<void> {
     const pngActual = await takeScreenshot()
     const fileContent = PNG.sync.write(pngActual)
     fs.writeFileSync(pngFixturPath, fileContent)
-    fs.writeFileSync(pngExpectPath, fileContent)
     throw new Error(
-      [
-        'Screenshot fixture missing. Screenshot fixture created at following paths:',
-        ` - ${pngFixturPath}`,
-        ` - ${pngExpectPath}`,
-      ].join('\n')
+      `Screenshot fixture missing. Screenshot fixture created at ${pngFixturPath}. You can now re-run the test and the screenshot fixture test will pass.`
     )
   }
   const pngExpect = PNG.sync.read(fs.readFileSync(pngFixturPath))
