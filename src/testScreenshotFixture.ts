@@ -10,8 +10,11 @@ import { assert, sleep } from './utils'
 import { getCurrentTest } from './getCurrentTest'
 import { expect } from './chai/expect'
 
-async function testScreenshotFixture(): Promise<void> {
-  const { pngFixturPath, pngExpectPath, pngActualPath, pngDifferPath } = getPngPaths()
+async function testScreenshotFixture({
+  screenshotFixturePath,
+}: { screenshotFixturePath?: string } = {}): Promise<void> {
+  const pngPaths = getPngPaths()
+  const pngFixturPath = screenshotFixturePath || pngPaths.pngFixturPath
   if (!fs.existsSync(pngFixturPath)) {
     const pngActual = await takeScreenshot()
     const fileContent = PNG.sync.write(pngActual)
@@ -30,6 +33,7 @@ async function testScreenshotFixture(): Promise<void> {
   try {
     expect(numDiffPixels).toBe(0)
   } catch (err) {
+    const { pngExpectPath, pngActualPath, pngDifferPath } = pngPaths
     {
       console.log('Actual image written at', pngActualPath)
       fs.writeFileSync(pngActualPath, PNG.sync.write(pngActual))
