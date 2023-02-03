@@ -39,7 +39,7 @@ export { getServerUrl }
 
 const serverUrlDefault = 'http://localhost:3000'
 
-const TIMEOUT_NPM_SCRIPT = 2 * 60 * 1000
+const TIMEOUT_NPM_SCRIPT = 2 * 60 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 2 : 1)
 const TIMEOUT_TEST_FUNCTION = 60 * 1000 * (!isGithubAction() ? 1 : isWindows() ? 5 : 3)
 const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isGithubAction() ? 1 : isLinux() ? 1 : 4)
 const TIMEOUT_AUTORETRY = TIMEOUT_TEST_FUNCTION / 2
