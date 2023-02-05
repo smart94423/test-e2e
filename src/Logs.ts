@@ -2,6 +2,7 @@ export { expectError }
 export const Logs = {
   add,
   flushLogs,
+  logErrors,
   clearLogs,
   hasErrorLogs,
   flushEagerly: false,
@@ -31,15 +32,20 @@ type LogEntry = {
 }
 let logEntries: LogEntry[] = []
 
-function hasErrorLogs(doNotFailOnWarning: boolean = false): boolean {
-  const logErrors = logEntries.filter(({ logSource, isNotFailure }) => {
+function hasErrorLogs(treatWarningAsError: boolean): boolean {
+  const errorLogs = getErrorLogs(treatWarningAsError)
+  return errorLogs.length > 0
+}
+
+function getErrorLogs(treatWarningAsError: boolean) {
+  const errorLogs = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
     }
     if (logSource === 'run() failure') {
       return true
     }
-    if (!doNotFailOnWarning && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+    if (treatWarningAsError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
     }
     if (logSource === 'Browser Error') {
@@ -47,11 +53,16 @@ function hasErrorLogs(doNotFailOnWarning: boolean = false): boolean {
     }
     return false
   })
-  return logErrors.length > 0
+  return errorLogs
 }
 
 function clearLogs() {
   logEntries = []
+}
+
+function logErrors(treatWarningAsError: boolean) {
+  const errorLogs = getErrorLogs(treatWarningAsError)
+  errorLogs.forEach((logEntry) => printLog(logEntry))
 }
 
 function flushLogs() {

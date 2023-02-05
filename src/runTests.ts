@@ -60,7 +60,7 @@ async function runTests(browser: Browser) {
     testInfo.afterEach(!!err)
 
     const { doNotFailOnWarning } = testInfo.runInfo
-    const hasErrorLog = Logs.hasErrorLogs(doNotFailOnWarning)
+    const hasErrorLog = Logs.hasErrorLogs(!doNotFailOnWarning)
     const isFailure = err || hasErrorLog
     if (isFailure) {
       logTestsResult(false)
@@ -69,6 +69,9 @@ async function runTests(browser: Browser) {
       }
       if (hasErrorLog) {
         logIsFailure(false, !doNotFailOnWarning)
+        console.log(pc.bold('vvvv FAIL LOGS vvvv'))
+        Logs.logErrors(!doNotFailOnWarning)
+        console.log(pc.bold('vvvv ALL LOGS vvvv'))
       }
       Logs.flushLogs()
       process.exit(1)
@@ -80,7 +83,7 @@ async function runTests(browser: Browser) {
   await testInfo.terminateServer()
   await page.close()
   // Handle case that an error occured during `terminateServer()`
-  if (Logs.hasErrorLogs()) {
+  if (Logs.hasErrorLogs(true)) {
     if (isWindows()) {
       // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
       Logs.clearLogs()
