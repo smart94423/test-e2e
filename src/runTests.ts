@@ -6,11 +6,6 @@ import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from './utils'
 import pc from 'picocolors'
 
-const logsContainError_errMsg = (isTermination: boolean) =>
-  [pc.bold('Encountered an error or warning'), !isTermination ? '' : ' during termination', ', see logs below.'].join(
-    ''
-  )
-
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
 
@@ -64,7 +59,8 @@ async function runTests(browser: Browser) {
     done(!!err)
     testInfo.afterEach(!!err)
 
-    const hasErrorLog = Logs.hasErrorLogs(testInfo.runInfo.doNotFailOnWarning)
+    const { doNotFailOnWarning } = testInfo.runInfo
+    const hasErrorLog = Logs.hasErrorLogs(doNotFailOnWarning)
     const isFailure = err || hasErrorLog
     if (isFailure) {
       logTestsResult(false)
@@ -72,7 +68,7 @@ async function runTests(browser: Browser) {
         console.error(err)
       }
       if (hasErrorLog) {
-        console.log(logsContainError_errMsg(false))
+        logIsFailure(false, !doNotFailOnWarning)
       }
       Logs.flushLogs()
       process.exit(1)
@@ -89,7 +85,7 @@ async function runTests(browser: Browser) {
       // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
       Logs.clearLogs()
     } else {
-      console.log(logsContainError_errMsg(true))
+      logIsFailure(true, false)
       Logs.flushLogs()
       process.exit(1)
     }
@@ -140,4 +136,19 @@ function logTestsResult(success: boolean) {
   } else {
     console.log(`${failStyle(' FAIL ')} ${testInfo.testFile}`)
   }
+}
+
+function logIsFailure(isTermination: boolean, canBeAWarning: boolean) {
+  console.log(
+    pc.red(
+      pc.bold(
+        [
+          'Test FAIL because encountered an error',
+          !canBeAWarning ? '' : ' or warning',
+          !isTermination ? '' : ' during termination',
+          ', see logs below.',
+        ].join('')
+      )
+    )
+  )
 }
