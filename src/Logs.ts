@@ -32,12 +32,12 @@ type LogEntry = {
 }
 let logEntries: LogEntry[] = []
 
-function hasErrorLogs(treatWarningAsError: boolean): boolean {
-  const errorLogs = getErrorLogs(treatWarningAsError)
+function hasErrorLogs(failOnWarning: boolean): boolean {
+  const errorLogs = getErrorLogs(failOnWarning)
   return errorLogs.length > 0
 }
 
-function getErrorLogs(treatWarningAsError: boolean) {
+function getErrorLogs(failOnWarning: boolean) {
   const errorLogs = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
@@ -45,7 +45,7 @@ function getErrorLogs(treatWarningAsError: boolean) {
     if (logSource === 'run() failure') {
       return true
     }
-    if (treatWarningAsError && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+    if (failOnWarning && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
     }
     if (logSource === 'Browser Error') {
@@ -60,12 +60,13 @@ function clearLogs() {
   logEntries = []
 }
 
-function logErrors(treatWarningAsError: boolean) {
-  const errorLogs = getErrorLogs(treatWarningAsError)
+function logErrors(failOnWarning: boolean) {
+  const errorLogs = getErrorLogs(failOnWarning)
   errorLogs.forEach((logEntry) => printLog(logEntry))
 }
 
 function flushLogs() {
+  console.log(pc.bold('vvvv ALL LOGS vvvv'))
   logEntries.forEach((logEntry) => printLog(logEntry))
   logEntries = []
 }

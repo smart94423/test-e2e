@@ -65,13 +65,9 @@ async function runTests(browser: Browser) {
     if (isFailure) {
       logTestsResult(false)
       if (err) {
-        console.error(err)
-      }
-      if (hasErrorLog) {
+        console.log(err)
+      } else if (hasErrorLog) {
         logIsFailure(false, !doNotFailOnWarning)
-        console.log(pc.bold('vvvv FAIL LOGS vvvv'))
-        Logs.logErrors(!doNotFailOnWarning)
-        console.log(pc.bold('vvvv ALL LOGS vvvv'))
       }
       Logs.flushLogs()
       process.exit(1)
@@ -141,17 +137,19 @@ function logTestsResult(success: boolean) {
   }
 }
 
-function logIsFailure(isTermination: boolean, canBeAWarning: boolean) {
+function logIsFailure(isTermination: boolean, failOnWarning: boolean) {
   console.log(
     pc.red(
       pc.bold(
         [
           'Test FAIL because encountered an error',
-          !canBeAWarning ? '' : ' or warning',
+          !failOnWarning ? '' : ' or warning',
           !isTermination ? '' : ' during termination',
           ', see logs below.',
         ].join('')
       )
     )
   )
+  console.log(pc.bold('vvvv FAIL LOG vvvv'))
+  Logs.logErrors(failOnWarning)
 }
