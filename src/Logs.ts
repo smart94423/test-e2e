@@ -125,7 +125,7 @@ function printLog(logEntry: LogEntry) {
 
   // See https://github.com/nodejs/node/issues/8033#issuecomment-388323687
   if (!ensureNewTerminalLine()) {
-    process.stderr.write(`\n`)
+    console.log('')
   }
 
   let msg = logText
@@ -139,7 +139,7 @@ function printLog(logEntry: LogEntry) {
     testInfoLabels = `[${testInfo.testName}][${testInfo.runInfo.cmd}]`
   }
 
-  process.stderr.write(`[${logTimestamp}]${testInfoLabels}[${logSourceLabel}] ${msg}`)
+  console.log(`[${logTimestamp}]${testInfoLabels}[${logSourceLabel}] ${msg}`)
 }
 
 function colorize(logSource: LogSource): string {
