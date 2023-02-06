@@ -131,7 +131,6 @@ function printLog(logEntry: LogEntry) {
   let msg = logText
   // I don't know why but sometimes `logText` is `undefined`
   if (msg === undefined) msg = ''
-  if (!msg.endsWith('\n')) msg = msg + '\n'
 
   let testInfoLabels = ''
   if (testInfo) {
