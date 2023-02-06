@@ -131,6 +131,8 @@ function printLog(logEntry: LogEntry) {
   let msg = logText
   // I don't know why but sometimes `logText` is `undefined`
   if (msg === undefined) msg = ''
+  // Some logs seem have a trailing new line
+  msg = msg.trim()
 
   let testInfoLabels = ''
   if (testInfo) {
