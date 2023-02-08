@@ -150,6 +150,6 @@ function logIsFailure(isTermination: boolean, failOnWarning: boolean) {
       )
     )
   )
-  console.log(pc.bold('vvvv FAIL LOG vvvv'))
+  console.log(pc.bold('vvvv FAIL LOGS vvvv'))
   Logs.logErrors(failOnWarning)
 }
