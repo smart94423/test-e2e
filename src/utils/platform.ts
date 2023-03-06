@@ -1,4 +1,4 @@
-export { isGithubAction }
+export { isCI }
 export { isLinux }
 export { isWindows }
 export { isMac }
@@ -18,6 +18,6 @@ function isMac() {
   assert(isLinux() || isWindows())
   return false
 }
-function isGithubAction() {
+function isCI() {
   return !!process.env.CI
 }
