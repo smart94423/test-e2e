@@ -68,6 +68,8 @@ async function runTests(browser: Browser) {
         console.log(err)
       } else if (hasErrorLog) {
         logIsFailure(false, !doNotFailOnWarning)
+      } else {
+        assert(false)
       }
       Logs.flushLogs()
       process.exit(1)
