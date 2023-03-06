@@ -84,10 +84,13 @@ async function runTests(browser: Browser) {
   await page.close()
   // Handle case that an error occured during `terminateServer()`
   if (Logs.hasErrorLogs(true)) {
+    /* TODO: implement more precise workaround
     if (isWindows()) {
       // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
       Logs.clearLogs()
     } else {
+    */
+    {
       logIsFailure(true, false)
       Logs.flushLogs()
       abortIfGitHubAction()
