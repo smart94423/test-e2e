@@ -595,6 +595,7 @@ function logDebugInfo(data: string) {
   console.log('testInfo.testFile', testInfo.testFile)
   console.log('testInfo.testName', testInfo.testName)
   console.log('data', data)
+  console.log('data.length', data.length)
   console.log('process.platform', process.platform)
   console.log('^^^^^ DEBUG INFO ^^^^^')
 }
