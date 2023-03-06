@@ -3,7 +3,7 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
@@ -129,7 +129,11 @@ async function runTestFile(browser: Browser) {
   // Check whether stderr emitted during testInfo.terminateServer()
   {
     const failOnWarning = true
-    if (Logs.hasErrorLogs(failOnWarning)) {
+    if (
+      Logs.hasErrorLogs(failOnWarning) &&
+      // See comments about taskkill in src/setup.ts
+      !isWindows()
+    ) {
       logFailureReason(`${getErrorType(failOnWarning)} occurred during server termination`)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()

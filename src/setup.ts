@@ -303,30 +303,33 @@ function stopProcess({
   if (isWindows()) {
     // - https://github.com/nodejs/node/issues/3617#issuecomment-377731194
     // - https://stackoverflow.com/questions/23706055/why-can-i-not-kill-my-child-process-in-nodejs-on-windows/28163919#28163919
+    // - taskkill seems to be buggy in many ways:
+    //   - taskkill seems to make the process exit with code `1`
+    //   - Because process exits with code `1`, Node.js/npm complains:
+    //     ```
+    //     [15:36:10.626][\examples\react][npm run preview][stderr] npm
+    //     [15:36:10.626][\examples\react][npm run preview][stderr]
+    //     [15:36:10.626][\examples\react][npm run preview][stderr] ERR!
+    //     [15:36:10.626][\examples\react][npm run preview][stderr]
+    //     [15:36:10.626][\examples\react][npm run preview][stderr] code
+    //     [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
+    //     ```
+    //     Because stderr isn't empty, runTests() believes that the termination failed.
+    //   - taskkill somtimes throws:
+    //     ```
+    //     ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
+    //     Reason: There is no running instance of the task.
+    //     ```
+    //     ```
+    //     ERROR: The process "6564" not found.
+    //     ```
+    //     There doesn't seem to be an option to suppress these errors: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
     spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
       stdio: [
-        'ignore', // stdin
-        'ignore', // stdout
-        // We ignore stderr because taskkill somtimes throws:
-        //   ```
-        //   ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
-        //   Reason: There is no running instance of the task.
-        //   ```
-        //   ```
-        //   ERROR: The process "6564" not found.
-        //   ```
-        // There doesn't seem to be an option to suppress that error: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
-        // The error propagates to Node.js's stderr.
-        //   ```
-        //   [15:36:10.626][\examples\react][npm run preview][stderr] npm
-        //   [15:36:10.626][\examples\react][npm run preview][stderr]
-        //   [15:36:10.626][\examples\react][npm run preview][stderr] ERR!
-        //   [15:36:10.626][\examples\react][npm run preview][stderr]
-        //   [15:36:10.626][\examples\react][npm run preview][stderr] code
-        //   [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
-        //   ```
-        // Because stderr isn't empty, runTests() believes that the termination failed.
-        'ignore', // stderr
+        'inherit', // stdin
+        'inherit', // stdout
+        // Ignoring stderr doesn't solve the problem that taskkill makes the process exit with code 1
+        'inherit', // stderr
       ],
     })
   } else {
