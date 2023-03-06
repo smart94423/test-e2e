@@ -3,7 +3,7 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
@@ -132,21 +132,7 @@ async function runTestFile(browser: Browser) {
   // Check whether stderr emitted during testInfo.terminateServer()
   {
     const failOnWarning = true
-    if (
-      Logs.hasErrorLogs(failOnWarning) &&
-      // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
-      // We skip this check for Windows: this check isn't important anyways.
-      // We cannot easilly supress the error because stderr is emitted multiple times:
-      // ```
-      // [15:36:10.626][\examples\react][npm run preview][stderr] npm
-      // [15:36:10.626][\examples\react][npm run preview][stderr]
-      // [15:36:10.626][\examples\react][npm run preview][stderr] ERR!
-      // [15:36:10.626][\examples\react][npm run preview][stderr]
-      // [15:36:10.626][\examples\react][npm run preview][stderr] code
-      // [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
-      // ```
-      !isWindows()
-    ) {
+    if (Logs.hasErrorLogs(failOnWarning)) {
       logFailureReason(`${getErrorType(failOnWarning)} occurred during server termination`)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()

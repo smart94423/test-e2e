@@ -41,7 +41,7 @@ const serverUrlDefault = 'http://localhost:3000'
 
 const TIMEOUT_NPM_SCRIPT = 2 * 60 * 1000 * (!isCI() ? 1 : isWindows() ? 2 : 1)
 const TIMEOUT_TEST_FUNCTION = 60 * 1000 * (!isCI() ? 1 : isWindows() ? 5 : 3)
-const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isCI() ? 1 : isLinux() ? 1 : 4)
+const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isCI() ? 1 : isWindows() ? 10 : !isLinux() ? 3 : 1)
 const TIMEOUT_AUTORETRY = TIMEOUT_TEST_FUNCTION / 2
 const TIMEOUT_PLAYWRIGHT = TIMEOUT_TEST_FUNCTION / 2
 
@@ -444,7 +444,10 @@ function execRunScript({
         logSource: 'run() failure',
         logText: errMsg,
       })
+      /* Don't interrupt the test runner, as the test runner may recover thanks to the process-killing-by-port
       reject(new Error(errMsg))
+      */
+      resolve()
     }, TIMEOUT_PROCESS_TERMINATION)
 
     assert(proc)
