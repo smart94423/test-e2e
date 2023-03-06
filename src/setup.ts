@@ -128,7 +128,7 @@ function run(
 
     // `runProcess` is `undefined` if `start()` failed.
     if (runProcess) {
-      await runProcess.terminate('SIGINT')
+      await runProcess.terminate()
     }
   }
 
@@ -182,7 +182,7 @@ function getRunInfo() {
 }
 
 type RunProcess = {
-  terminate: (signal: 'SIGINT' | 'SIGKILL') => Promise<void>
+  terminate: (force?: true) => Promise<void>
 }
 async function start(): Promise<RunProcess> {
   const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
@@ -226,7 +226,7 @@ async function start(): Promise<RunProcess> {
       logSource: 'run() failure',
       logText: errMsg,
     })
-    await terminate()
+    await terminate(true)
     rejectServerStart(new Error(errMsg))
   }, timeoutTotal)
 
@@ -280,7 +280,7 @@ function stopProcess({
   proc: ChildProcessWithoutNullStreams
   cwd: string
   cmd: string
-  signal: 'SIGINT' | 'SIGKILL'
+  signal: 'SIGTERM' | 'SIGKILL'
 }) {
   const prefix = `[Run Stop][${cwd}][${cmd}]`
 
@@ -371,7 +371,7 @@ function execRunScript({
       logText: err.message,
       logSource: 'run() failure',
     })
-    await terminate()
+    await terminate(true)
     onFailure(err)
   }
 
@@ -430,7 +430,8 @@ function execRunScript({
     return procExited
   }
 
-  async function terminate(signal: 'SIGINT' | 'SIGKILL' = 'SIGKILL') {
+  async function terminate(force?: true) {
+    const signal = force ? 'SIGKILL' : 'SIGTERM'
     let resolve!: () => void
     let reject!: (err: Error) => void
     const promise = new Promise<void>((_resolve, _reject) => {

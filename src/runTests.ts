@@ -81,7 +81,6 @@ async function runTestFile(browser: Browser) {
   try {
     await testInfo.startServer()
   } catch (err) {
-    logResult(false)
     logFailureReason('an error occurred while starting the server')
     logError(err)
     Logs.flushLogs()
@@ -108,7 +107,6 @@ async function runTestFile(browser: Browser) {
       const hasErrorLog = Logs.hasErrorLogs(failOnWarning)
       const isFailure = err || hasErrorLog
       if (isFailure) {
-        logResult(false)
         if (err) {
           logFailureReason(`the test "${testDesc}" threw an error`)
           logError(err)
@@ -191,10 +189,10 @@ function logResult(success: boolean) {
 }
 
 function logFailureReason(reason: string) {
-  const testInfo = getCurrentTest()
+  logResult(false)
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
-  const msg = `Test ${testInfo.testFile} ${FAIL} because ${reason}, see below.`
+  const msg = `Test ${FAIL} because ${reason}, see below.`
   console.log(color(msg))
 }
 
