@@ -392,23 +392,24 @@ function execRunScript({
     onFailure(err)
   }
 
-  proc.stdin.on('data', async (data: string) => {
+  proc.stdin.on('data', async (chunk: Buffer) => {
+    const data = String(chunk)
     await exitAndFail(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
   })
-  proc.stdout.on('data', (data: string) => {
+  proc.stdout.on('data', (chunk: Buffer) => {
+    const data = String(chunk)
     assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
-    data = data.toString()
     Logs.add({
       logSource: 'stdout',
       logText: data,
     })
     onStdout?.(data)
   })
-  proc.stderr.on('data', async (data) => {
+  proc.stderr.on('data', async (chunk: Buffer) => {
+    const data = String(chunk)
     assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
-    data = data.toString()
     Logs.add({
       logSource: 'stderr',
       logText: data,
@@ -443,12 +444,12 @@ function execRunScript({
 
   return { terminate, processHasExited }
 
-  function assertNotExited(data: string) {
+  function assertNotExited(data: String) {
     if (!procExited) return
     Logs.logErrors(true)
     Logs.flushLogs()
     console.log('getCurrentTest()', getCurrentTest())
-    console.log('data', data)
+    console.log('data', String(data))
     console.log('cmd', cmd)
     console.log('process.platform', process.platform)
     assert(false)
