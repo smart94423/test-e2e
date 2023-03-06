@@ -122,34 +122,40 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
 
 function logTestsResult(success: boolean) {
   const testInfo = getCurrentTest()
-  const passStyle = (t: string) => pc.bold(pc.bgGreen(t))
-  const failStyle = (t: string) => pc.bold(pc.bgRed(t))
-  const skipStyle = (t: string) => pc.bold(pc.bgYellow(t))
+  const { PASS, FAIL, WARN } = getStatusTags()
   if (success) {
     assert(!testInfo.skipped)
-    console.log(`${passStyle(' PASS ')} ${testInfo.testFile}`)
+    console.log(`${PASS} ${testInfo.testFile}`)
     return
   }
   if (testInfo.skipped) {
-    console.log(`${skipStyle(' WARN ')} ${testInfo.testFile} (${testInfo.skipped})`)
+    console.log(`${WARN} ${testInfo.testFile} (${testInfo.skipped})`)
   } else {
-    console.log(`${failStyle(' FAIL ')} ${testInfo.testFile}`)
+    console.log(`${FAIL} ${testInfo.testFile}`)
   }
 }
 
 function logIsFailure(isTermination: boolean, failOnWarning: boolean) {
+  const { FAIL } = getStatusTags()
   console.log(
     pc.red(
       pc.bold(
         [
-          'Test FAIL because encountered an error',
-          !failOnWarning ? '' : ' or warning',
+          `Test ${FAIL} because encountered error(s)`,
+          !failOnWarning ? '' : ' and/or warning(s)',
           !isTermination ? '' : ' during termination',
           ', see logs below.',
         ].join('')
       )
     )
   )
-  console.log(pc.bold('vvvv FAIL LOGS vvvv'))
+  console.log(pc.bold('vvvv FAIL LOG(S) vvvv'))
   Logs.logErrors(failOnWarning)
+}
+
+function getStatusTags() {
+  const PASS = pc.bold(pc.bgGreen('PASS'))
+  const FAIL = pc.bold(pc.bgRed('FAIL'))
+  const WARN = pc.bold(pc.bgYellow('WARN'))
+  return { PASS, FAIL, WARN }
 }
