@@ -12,6 +12,7 @@ import { assert, ensureNewTerminalLine } from './utils'
 import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
 import { getConfig } from './getConfig'
+import { logSection } from './logSection'
 
 type LogSource =
   | 'stdout'
@@ -61,12 +62,14 @@ function clearLogs() {
 }
 
 function logErrors(failOnWarning: boolean) {
+  if (!Logs.hasErrorLogs(failOnWarning)) return
+  logSection(`ERROR${!failOnWarning ? '' : '/WARNING'} LOG(S)`)
   const errorLogs = getErrorLogs(failOnWarning)
   errorLogs.forEach((logEntry) => printLog(logEntry))
 }
 
 function flushLogs() {
-  console.log(pc.bold('vvvv ALL LOGS vvvv'))
+  logSection('ALL LOGS')
   logEntries.forEach((logEntry) => printLog(logEntry))
   logEntries = []
 }

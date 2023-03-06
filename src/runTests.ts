@@ -3,9 +3,10 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
+import { logSection } from './logSection'
 
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
@@ -20,7 +21,7 @@ async function runTests(browser: Browser) {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
-    logTestsResult(false)
+    logResult(false)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
     return
@@ -35,14 +36,24 @@ async function runTests(browser: Browser) {
   // Set when user calls `test()`
   assert(testInfo.tests)
 
+  const clean = async () => {
+    await testInfo.terminateServer?.()
+    await page.close()
+  }
+  const abort = async () => {
+    await clean()
+    abortIfGitHubAction()
+  }
+
   // TODO: resolve a success flag instead rejecting
   try {
     await testInfo.startServer()
   } catch (err) {
-    logTestsResult(false)
-    console.log(err)
+    logResult(false)
+    logFailureReason('during server start', false)
+    logError(err)
     Logs.flushLogs()
-    abortIfGitHubAction()
+    await abort()
     return
   }
 
@@ -60,29 +71,33 @@ async function runTests(browser: Browser) {
     }
     done(!!err)
     testInfo.afterEach(!!err)
-
-    const { doNotFailOnWarning } = testInfo.runInfo
-    const hasErrorLog = Logs.hasErrorLogs(!doNotFailOnWarning)
-    const isFailure = err || hasErrorLog
-    if (isFailure) {
-      logTestsResult(false)
-      if (err) {
-        console.log(err)
-      } else if (hasErrorLog) {
-        logIsFailure(false, !doNotFailOnWarning)
-      } else {
-        assert(false)
+    {
+      const failOnWarning = !testInfo.runInfo.doNotFailOnWarning
+      const hasErrorLog = Logs.hasErrorLogs(failOnWarning)
+      const isFailure = err || hasErrorLog
+      if (isFailure) {
+        logResult(false)
+        const failureContext = 'while running the tests'
+        if (err) {
+          logFailureReason(failureContext, false)
+          logError(err)
+        } else if (hasErrorLog) {
+          logFailureReason(failureContext, true, failOnWarning)
+        } else {
+          assert(false)
+        }
+        Logs.logErrors(failOnWarning)
+        Logs.flushLogs()
+        await abort()
+        return
       }
-      Logs.flushLogs()
-      abortIfGitHubAction()
-    } else {
-      Logs.clearLogs()
     }
+    Logs.clearLogs()
   }
 
-  await testInfo.terminateServer()
-  await page.close()
-  // Handle case that an error occured during `terminateServer()`
+  await clean()
+
+  // Handle case that an error occured during `testInfo.terminateServer()`
   if (Logs.hasErrorLogs(true)) {
     /* TODO: implement more precise workaround
     if (isWindows()) {
@@ -90,14 +105,15 @@ async function runTests(browser: Browser) {
       Logs.clearLogs()
     } else {
     */
-    {
-      logIsFailure(true, false)
-      Logs.flushLogs()
-      abortIfGitHubAction()
-    }
+    const failOnWarning = false
+    logFailureReason('during server termination', true, failOnWarning)
+    Logs.logErrors(failOnWarning)
+    Logs.flushLogs()
+    await abort()
+    return
   }
 
-  logTestsResult(true)
+  logResult(true)
 }
 
 function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefined | unknown> {
@@ -127,7 +143,7 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
   return promise
 }
 
-function logTestsResult(success: boolean) {
+function logResult(success: boolean) {
   const testInfo = getCurrentTest()
   const { PASS, FAIL, WARN } = getStatusTags()
   if (success) {
@@ -142,22 +158,25 @@ function logTestsResult(success: boolean) {
   }
 }
 
-function logIsFailure(isTermination: boolean, failOnWarning: boolean) {
+function logFailureReason(
+  context: `during ${string}` | `while ${string}`,
+  isErrorLog: boolean,
+  failOnWarning?: boolean
+) {
   const { FAIL } = getStatusTags()
-  console.log(
-    pc.red(
-      pc.bold(
-        [
-          `Test ${FAIL} because encountered error(s)`,
-          !failOnWarning ? '' : ' and/or warning(s)',
-          !isTermination ? '' : ' during termination',
-          ', see logs below.',
-        ].join('')
-      )
-    )
+  const color = (s: string) => pc.red(pc.bold(s))
+  assert(
+    (isErrorLog === false && failOnWarning === undefined) ||
+      (isErrorLog === true && (failOnWarning === true || failOnWarning === false))
   )
-  console.log(pc.bold('vvvv FAIL LOG(S) vvvv'))
-  Logs.logErrors(failOnWarning)
+  const errType = isErrorLog ? 'error' : !failOnWarning ? 'error(s)' : 'error(s)/warning(s)'
+  const msg = `Test ${FAIL} because encountered ${errType} ${context}, see below.`
+  console.log(color(msg))
+}
+
+function logError(err: unknown) {
+  logSection('ERROR')
+  console.log(err)
 }
 
 function getStatusTags() {
