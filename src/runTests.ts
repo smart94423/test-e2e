@@ -4,11 +4,43 @@ import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
+import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
 import { logSection } from './logSection'
+import { setCurrentTest } from './getCurrentTest'
 
-async function runTests(browser: Browser) {
+import { getBrowser } from './getBrowser'
+import { buildTs } from './buildTs'
+import { findTestFiles } from './findTestFiles'
+import { loadConfig } from './getConfig'
+
+async function runTests(filter: null | FindFilter) {
+  await loadConfig()
+
+  const testFiles = await findTestFiles(filter)
+
+  const browser = await getBrowser()
+
+  for (const testFile of testFiles) {
+    assert(testFile.endsWith('.ts'))
+    const testFileJs = testFile.replace('.ts', '.mjs')
+    const clean = await buildTs(testFile, testFileJs)
+    setCurrentTest(testFile)
+    try {
+      await import(fsWindowsBugWorkaround(testFileJs))
+    } finally {
+      clean()
+    }
+    await runTestFile(browser)
+    setCurrentTest(null)
+    assert(testFileJs.endsWith('.mjs'))
+  }
+
+  await browser.close()
+}
+
+async function runTestFile(browser: Browser) {
   const testInfo = getCurrentTest()
 
   if (isTTY) {

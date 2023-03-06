@@ -1,6 +1,6 @@
 import sourceMapSupport from 'source-map-support'
 import { assert, findFilesParseCliArgs, fsWindowsBugWorkaroundPrefix } from './utils'
-import { runTestSuites } from './runTestSuites'
+import { runTests } from './runTests'
 import { sourceMaps } from './buildTs'
 import { Logs } from './Logs'
 
@@ -11,7 +11,7 @@ cli()
 
 function cli() {
   const filter = findFilesParseCliArgs()
-  runTestSuites(filter)
+  runTests(filter)
 }
 
 function initPromiseRejectionHandler() {
