@@ -396,7 +396,7 @@ function execRunScript({
     await exitAndFail(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
   })
   proc.stdout.on('data', (data: string) => {
-    assert(!procExited)
+    assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
@@ -406,7 +406,7 @@ function execRunScript({
     onStdout?.(data)
   })
   proc.stderr.on('data', async (data) => {
-    assert(!procExited)
+    assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     data = data.toString()
     Logs.add({
@@ -442,6 +442,17 @@ function execRunScript({
   })
 
   return { terminate, processHasExited }
+
+  function assertNotExited(data: string) {
+    if (!procExited) return
+    Logs.logErrors(true)
+    Logs.flushLogs()
+    console.log('getCurrentTest()', getCurrentTest())
+    console.log('data', data)
+    console.log('cmd', cmd)
+    console.log('process.platform', process.platform)
+    assert(false)
+  }
 
   function processHasExited(): boolean {
     return procExited
