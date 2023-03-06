@@ -41,7 +41,7 @@ const serverUrlDefault = 'http://localhost:3000'
 
 const TIMEOUT_NPM_SCRIPT = 2 * 60 * 1000 * (!isCI() ? 1 : isWindows() ? 2 : 1)
 const TIMEOUT_TEST_FUNCTION = 60 * 1000 * (!isCI() ? 1 : isWindows() ? 5 : 3)
-const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isCI() ? 1 : isWindows() ? 10 : !isLinux() ? 3 : 1)
+const TIMEOUT_PROCESS_TERMINATION = 10 * 1000 * (!isCI() ? 1 : isWindows() ? 3 : !isLinux() ? 3 : 1)
 const TIMEOUT_AUTORETRY = TIMEOUT_TEST_FUNCTION / 2
 const TIMEOUT_PLAYWRIGHT = TIMEOUT_TEST_FUNCTION / 2
 
@@ -275,12 +275,12 @@ function stopProcess({
   proc,
   cwd,
   cmd,
-  signal,
+  force,
 }: {
   proc: ChildProcessWithoutNullStreams
   cwd: string
   cmd: string
-  signal: 'SIGTERM' | 'SIGKILL'
+  force?: true
 }) {
   const prefix = `[Run Stop][${cwd}][${cmd}]`
 
@@ -307,18 +307,32 @@ function stopProcess({
       stdio: [
         'ignore', // stdin
         'ignore', // stdout
-        // Should we ignore `stderr`? Because `taskkill` somtimes throws:
-        // ```
-        // ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
-        // Reason: There is no running instance of the task.
-        // ```
+        // We ignore stderr because taskkill somtimes throws:
+        //   ```
+        //   ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
+        //   Reason: There is no running instance of the task.
+        //   ```
+        //   ```
+        //   ERROR: The process "6564" not found.
+        //   ```
         // There doesn't seem to be an option to suppress that error: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
-        'inherit', // stderr
+        // The error propagates to Node.js's stderr.
+        //   ```
+        //   [15:36:10.626][\examples\react][npm run preview][stderr] npm
+        //   [15:36:10.626][\examples\react][npm run preview][stderr]
+        //   [15:36:10.626][\examples\react][npm run preview][stderr] ERR!
+        //   [15:36:10.626][\examples\react][npm run preview][stderr]
+        //   [15:36:10.626][\examples\react][npm run preview][stderr] code
+        //   [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
+        //   ```
+        // Because stderr isn't empty, runTests() believes that the termination failed.
+        'ignore', // stderr
       ],
     })
   } else {
     assert(proc.pid)
     const processGroup = -1 * proc.pid
+    const signal = force ? 'SIGKILL' : 'SIGTERM'
     process.kill(processGroup, signal)
     /*
       try {
@@ -431,7 +445,6 @@ function execRunScript({
   }
 
   async function terminate(force?: true) {
-    const signal = force ? 'SIGKILL' : 'SIGTERM'
     let resolve!: () => void
     let reject!: (err: Error) => void
     const promise = new Promise<void>((_resolve, _reject) => {
@@ -457,7 +470,7 @@ function execRunScript({
         proc,
         cwd,
         cmd,
-        signal,
+        force,
       })
     } catch (err) {
       Logs.add({
