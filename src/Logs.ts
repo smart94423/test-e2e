@@ -5,7 +5,7 @@ export const Logs = {
   logErrors,
   clearLogs,
   hasErrorLogs,
-  flushEagerly: false,
+  logEagerly: false,
 }
 
 import { assert, ensureNewTerminalLine } from './utils'
@@ -94,8 +94,8 @@ function add({ logSource, logText }: { logSource: LogSource; logText: string }) 
     isNotFailure,
   }
   logEntries.push(logEntry)
-  if (Logs.flushEagerly) {
-    flushLogs()
+  if (Logs.logEagerly) {
+    printLog(logEntry)
   }
 }
 

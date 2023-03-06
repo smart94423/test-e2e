@@ -88,7 +88,7 @@ function run(
   }
 
   if (inspect) {
-    Logs.flushEagerly = true
+    Logs.logEagerly = true
   }
 
   let runProcess: RunProcess | null = null
