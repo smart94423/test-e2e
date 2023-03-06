@@ -1,4 +1,4 @@
-export { isGitHubAction }
+export { abortIfGitHubAction }
 export { getTestFiles }
 
 import { assert } from './utils'
@@ -7,6 +7,11 @@ import path from 'path'
 
 const cwd = process.cwd()
 
+function abortIfGitHubAction() {
+  if (isGitHubAction()) {
+    process.exit(1)
+  }
+}
 function isGitHubAction(): boolean {
   return getTestFiles() !== null
 }

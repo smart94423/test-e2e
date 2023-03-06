@@ -10,11 +10,11 @@ function runCommand(
     cwd = process.cwd(),
   }: { swallowError?: boolean; timeout?: number; cwd?: string } = {}
 ): Promise<string> {
-  const { promise, resolvePromise } = genPromise<string>()
+  const { promise, resolvePromise, rejectPromise } = genPromise<string>()
 
   const t = setTimeout(() => {
     console.error(`Command call \`${cmd}\` timeout [${timeout / 1000} seconds][${cwd}].`)
-    process.exit(1)
+    rejectPromise()
   }, timeout)
 
   const options = { cwd }

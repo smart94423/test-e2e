@@ -5,6 +5,7 @@ import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, logProgress, isWindows } from './utils'
 import pc from 'picocolors'
+import { abortIfGitHubAction } from './github-action'
 
 async function runTests(browser: Browser) {
   const testInfo = getCurrentTest()
@@ -41,7 +42,8 @@ async function runTests(browser: Browser) {
     logTestsResult(false)
     console.log(err)
     Logs.flushLogs()
-    process.exit(1)
+    abortIfGitHubAction()
+    return
   }
 
   for (const { testDesc, testFn } of testInfo.tests) {
@@ -72,7 +74,7 @@ async function runTests(browser: Browser) {
         assert(false)
       }
       Logs.flushLogs()
-      process.exit(1)
+      abortIfGitHubAction()
     } else {
       Logs.clearLogs()
     }
@@ -88,7 +90,7 @@ async function runTests(browser: Browser) {
     } else {
       logIsFailure(true, false)
       Logs.flushLogs()
-      process.exit(1)
+      abortIfGitHubAction()
     }
   }
 
