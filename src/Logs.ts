@@ -63,7 +63,7 @@ function clearLogs() {
 
 function logErrors(failOnWarning: boolean) {
   if (!Logs.hasErrorLogs(failOnWarning)) return
-  logSection(`ERROR${!failOnWarning ? '' : '/WARNING'} LOG(S)`)
+  logSection(`ERROR${!failOnWarning ? '' : '/WARNING'} LOGS`)
   const errorLogs = getErrorLogs(failOnWarning)
   errorLogs.forEach((logEntry) => printLog(logEntry))
 }

@@ -3,7 +3,7 @@ export { runTests }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
@@ -82,8 +82,8 @@ async function runTestFile(browser: Browser) {
     await testInfo.startServer()
   } catch (err) {
     logResult(false)
-    logFailureReason('during server start', false)
-    logError(err)
+    logFailureReason('an error occurred while starting the server')
+    logError(err, 'ERROR')
     Logs.flushLogs()
     await abort()
     return
@@ -111,10 +111,10 @@ async function runTestFile(browser: Browser) {
         logResult(false)
         const failureContext = 'while running the tests'
         if (err) {
-          logFailureReason(failureContext, false)
-          logError(err)
+          logFailureReason(`a test failed ${failureContext}`)
+          logError(err, 'TEST ASSERTION FAILURE')
         } else if (hasErrorLog) {
-          logFailureReason(failureContext, true, failOnWarning)
+          logFailureReason(`${getErrorType(failOnWarning)} occurred ${failureContext}`)
         } else {
           assert(false)
         }
@@ -129,23 +129,38 @@ async function runTestFile(browser: Browser) {
 
   await clean()
 
-  // Handle case that an error occured during `testInfo.terminateServer()`
-  if (Logs.hasErrorLogs(true)) {
-    /* TODO: implement more precise workaround
-    if (isWindows()) {
+  // Check whether stderr emitted during testInfo.terminateServer()
+  {
+    const failOnWarning = true
+    if (
+      Logs.hasErrorLogs(failOnWarning) &&
       // On Windows, the sever sometimes terminates with an exit code of `1`. I don't know why.
-      Logs.clearLogs()
-    } else {
-    */
-    const failOnWarning = false
-    logFailureReason('during server termination', true, failOnWarning)
-    Logs.logErrors(failOnWarning)
-    Logs.flushLogs()
-    await abort()
-    return
+      // We skip this check for Windows: this check isn't important anyways.
+      // We cannot easilly supress the error because stderr is emitted multiple times:
+      // ```
+      // [15:36:10.626][\examples\react][npm run preview][stderr] npm
+      // [15:36:10.626][\examples\react][npm run preview][stderr]
+      // [15:36:10.626][\examples\react][npm run preview][stderr] ERR!
+      // [15:36:10.626][\examples\react][npm run preview][stderr]
+      // [15:36:10.626][\examples\react][npm run preview][stderr] code
+      // [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
+      // ```
+      !isWindows()
+    ) {
+      logFailureReason(`${getErrorType(failOnWarning)} occurred during server termination`)
+      Logs.logErrors(failOnWarning)
+      Logs.flushLogs()
+      await abort()
+      return
+    }
   }
 
+  Logs.clearLogs()
   logResult(true)
+}
+
+function getErrorType(failOnWarning: boolean) {
+  return !failOnWarning ? 'error(s)' : 'error(s)/warning(s)'
 }
 
 function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefined | unknown> {
@@ -190,30 +205,22 @@ function logResult(success: boolean) {
   }
 }
 
-function logFailureReason(
-  context: `during ${string}` | `while ${string}`,
-  isErrorLog: boolean,
-  failOnWarning?: boolean
-) {
+function logFailureReason(reason: string) {
+  const testInfo = getCurrentTest()
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
-  assert(
-    (isErrorLog === false && failOnWarning === undefined) ||
-      (isErrorLog === true && (failOnWarning === true || failOnWarning === false))
-  )
-  const errType = isErrorLog ? 'error' : !failOnWarning ? 'error(s)' : 'error(s)/warning(s)'
-  const msg = `Test ${FAIL} because encountered ${errType} ${context}, see below.`
+  const msg = `Test ${testInfo.testFile} ${FAIL} because ${reason}, see below.`
   console.log(color(msg))
 }
 
-function logError(err: unknown) {
-  logSection('ERROR')
+function logError(err: unknown, msg: 'ERROR' | 'TEST ASSERTION FAILURE') {
+  logSection(msg)
   console.log(err)
 }
 
 function getStatusTags() {
-  const PASS = pc.bold(pc.bgGreen('PASS'))
-  const FAIL = pc.bold(pc.bgRed('FAIL'))
-  const WARN = pc.bold(pc.bgYellow('WARN'))
+  const PASS = pc.bold(pc.bgGreen(pc.white(' PASS ')))
+  const FAIL = pc.bold(pc.bgRed(pc.white(' FAIL ')))
+  const WARN = pc.bold(pc.bgYellow(pc.white(' WARN ')))
   return { PASS, FAIL, WARN }
 }
