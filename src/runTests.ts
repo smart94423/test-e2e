@@ -83,7 +83,7 @@ async function runTestFile(browser: Browser) {
   } catch (err) {
     logResult(false)
     logFailureReason('an error occurred while starting the server')
-    logError(err, 'ERROR')
+    logError(err)
     Logs.flushLogs()
     await abort()
     return
@@ -109,12 +109,11 @@ async function runTestFile(browser: Browser) {
       const isFailure = err || hasErrorLog
       if (isFailure) {
         logResult(false)
-        const failureContext = 'while running the tests'
         if (err) {
-          logFailureReason(`a test failed ${failureContext}`)
-          logError(err, 'TEST ASSERTION FAILURE')
+          logFailureReason(`the test "${testDesc}" threw an error`)
+          logError(err)
         } else if (hasErrorLog) {
-          logFailureReason(`${getErrorType(failOnWarning)} occurred ${failureContext}`)
+          logFailureReason(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
         } else {
           assert(false)
         }
@@ -199,8 +198,8 @@ function logFailureReason(reason: string) {
   console.log(color(msg))
 }
 
-function logError(err: unknown, msg: 'ERROR' | 'TEST ASSERTION FAILURE') {
-  logSection(msg)
+function logError(err: unknown) {
+  logSection('ERROR')
   console.log(err)
 }
 
