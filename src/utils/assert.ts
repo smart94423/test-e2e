@@ -6,7 +6,6 @@ export { getProjectError }
 export { errorPrefix as projectErrorPrefix }
 
 import { logFailure } from '../runTests'
-import { createErrorWithCleanStackTrace } from './createErrorWithCleanStackTrace'
 import { projectInfo } from './projectInfo'
 import { Logs } from '../Logs'
 import { getCurrentTest } from '../getCurrentTest'
@@ -34,15 +33,14 @@ function assert(condition: unknown, debugInfo?: unknown): asserts condition {
     return `Debug info (this is for the ${projectInfo.projectName} maintainers; you can ignore this): ${debugInfoSerialized}.`
   })()
 
-  const internalError = createErrorWithCleanStackTrace(
+  const internalError = new Error(
     [
       `${internalErrorPrefix} You stumbled upon a bug in ${projectInfo.projectName}'s source code.`,
       `Reach out at ${projectInfo.githubRepository}/issues/new and include this error stack (the error stack is usually enough to fix the problem).`,
       'A maintainer will fix the bug (usually under 24 hours).',
       `Do not hesitate to reach out as it makes ${projectInfo.projectName} more robust.`,
       debugStr,
-    ].join(' '),
-    numberOfStackTraceLinesToRemove
+    ].join(' ')
   )
 
   logFailure('a bug occurred in @brillout/test-e2e')
@@ -59,16 +57,12 @@ function assertUsage(condition: unknown, errorMessage: string): asserts conditio
     return
   }
   const whiteSpace = errorMessage.startsWith('[') ? '' : ' '
-  const usageError = createErrorWithCleanStackTrace(
-    `${usageErrorPrefix}${whiteSpace}${errorMessage}`,
-    numberOfStackTraceLinesToRemove
-  )
-  throw usageError
+  throw new Error(`${usageErrorPrefix}${whiteSpace}${errorMessage}`)
 }
 
 function getProjectError(errorMessage: string) {
-  const pluginError = createErrorWithCleanStackTrace(`${errorPrefix} ${errorMessage}`, numberOfStackTraceLinesToRemove)
-  return pluginError
+  const projectError = new Error(`${errorPrefix} ${errorMessage}`)
+  return projectError
 }
 
 let loggedWarnings: Set<string> = new Set()
