@@ -402,7 +402,7 @@ function execRunScript({
       logSource: 'stdout',
       logText: data,
     })
-    /* These assertions sometimes fails, see comments in assertNotExited()
+    /* These assertions sometimes fail, see comments in assertNotExited()
     assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     /*/
@@ -416,7 +416,7 @@ function execRunScript({
       logSource: 'stderr',
       logText: data,
     })
-    /* These assertions sometimes fails, see comments in assertNotExited()
+    /* These assertions sometimes fail, see comments in assertNotExited()
     assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     /*/
