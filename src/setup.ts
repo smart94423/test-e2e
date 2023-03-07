@@ -398,7 +398,7 @@ function execRunScript({
   })
   proc.stdout.on('data', (chunk: Buffer) => {
     const data = String(chunk)
-    assertNotExited(data)
+    // assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     Logs.add({
       logSource: 'stdout',
@@ -408,7 +408,7 @@ function execRunScript({
   })
   proc.stderr.on('data', async (chunk: Buffer) => {
     const data = String(chunk)
-    assertNotExited(data)
+    // assertNotExited(data)
     assert(getRunInfo().cmd === cmd)
     Logs.add({
       logSource: 'stderr',
@@ -444,12 +444,15 @@ function execRunScript({
 
   return { terminate, processHasExited }
 
+  /* Node.js seems to occasionally emit 'data' events after having the emitted 'exit' event, for example:
+   *  - `{"data":"[0] npm run serve:cdn  exited with code SIGTERM\n","dataLength":48}`.
   function assertNotExited(data: string) {
     if (!procExited) return
     // Sometimes, a single white space is emitted after 'exit' has been emitted.
     if (data.trim().length === 0) return
     assert(false, { data, dataLength: data.length })
   }
+  */
 
   function processHasExited(): boolean {
     return procExited
