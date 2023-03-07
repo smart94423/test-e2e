@@ -16,6 +16,8 @@ import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
 
+let hasFailure = false
+
 async function runTests(filter: null | FindFilter) {
   await loadConfig()
 
@@ -23,6 +25,7 @@ async function runTests(filter: null | FindFilter) {
 
   const browser = await getBrowser()
 
+  let hasFailedTest = false
   for (const testFile of testFiles) {
     assert(testFile.endsWith('.ts'))
     const testFileJs = testFile.replace('.ts', '.mjs')
@@ -33,15 +36,25 @@ async function runTests(filter: null | FindFilter) {
     } finally {
       clean()
     }
-    await runTestFile(browser)
+    const success = await runTestFile(browser)
+    if (!success) {
+      hasFailedTest = true
+    }
     setCurrentTest(null)
     assert(testFileJs.endsWith('.mjs'))
   }
 
   await browser.close()
+
+  if (hasFailedTest || hasFailure) {
+    // hasFailedTest and hasFailure are redundant
+    //  - When assert.ts calls logFailure() this code block isn't run
+    assert(hasFailedTest && hasFailure)
+    throw new Error('A test failed. See messages above.')
+  }
 }
 
-async function runTestFile(browser: Browser) {
+async function runTestFile(browser: Browser): Promise<boolean> {
   const testInfo = getCurrentTest()
 
   if (isTTY) {
@@ -57,7 +70,7 @@ async function runTestFile(browser: Browser) {
     logTestStatus(false)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    return
+    return true
   }
 
   // Set when user calls `run()`
@@ -86,7 +99,7 @@ async function runTestFile(browser: Browser) {
     logError(err)
     Logs.flushLogs()
     await abort()
-    return
+    return false
   }
 
   for (const { testDesc, testFn } of testInfo.tests) {
@@ -119,7 +132,7 @@ async function runTestFile(browser: Browser) {
         Logs.logErrors(failOnWarning)
         Logs.flushLogs()
         await abort()
-        return
+        return false
       }
     }
     Logs.clearLogs()
@@ -139,12 +152,14 @@ async function runTestFile(browser: Browser) {
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()
       await abort()
-      return
+      return false
     }
   }
 
   Logs.clearLogs()
   logTestStatus(true)
+
+  return true
 }
 
 function getErrorType(failOnWarning: boolean) {
@@ -194,6 +209,7 @@ function logTestStatus(success: boolean) {
 }
 
 function logFailure(reason: string) {
+  hasFailure = true
   logTestStatus(false)
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
