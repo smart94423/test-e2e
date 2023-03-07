@@ -53,7 +53,7 @@ async function runTestFile(browser: Browser) {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
-    logResult(false)
+    logTestStatus(false)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
     return
@@ -81,7 +81,7 @@ async function runTestFile(browser: Browser) {
   try {
     await testInfo.startServer()
   } catch (err) {
-    logFailureReason('an error occurred while starting the server')
+    logFailure('an error occurred while starting the server')
     logError(err)
     Logs.flushLogs()
     await abort()
@@ -108,10 +108,10 @@ async function runTestFile(browser: Browser) {
       const isFailure = err || hasErrorLog
       if (isFailure) {
         if (err) {
-          logFailureReason(`the test "${testDesc}" threw an error`)
+          logFailure(`the test "${testDesc}" threw an error`)
           logError(err)
         } else if (hasErrorLog) {
-          logFailureReason(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
+          logFailure(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
         } else {
           assert(false)
         }
@@ -134,7 +134,7 @@ async function runTestFile(browser: Browser) {
       // See comments about taskkill in src/setup.ts
       !isWindows()
     ) {
-      logFailureReason(`${getErrorType(failOnWarning)} occurred during server termination`)
+      logFailure(`${getErrorType(failOnWarning)} occurred during server termination`)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()
       await abort()
@@ -143,7 +143,7 @@ async function runTestFile(browser: Browser) {
   }
 
   Logs.clearLogs()
-  logResult(true)
+  logTestStatus(true)
 }
 
 function getErrorType(failOnWarning: boolean) {
@@ -177,7 +177,7 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
   return promise
 }
 
-function logResult(success: boolean) {
+function logTestStatus(success: boolean) {
   const testInfo = getCurrentTest()
   const { PASS, FAIL, WARN } = getStatusTags()
   if (success) {
@@ -192,8 +192,8 @@ function logResult(success: boolean) {
   }
 }
 
-function logFailureReason(reason: string) {
-  logResult(false)
+function logFailure(reason: string) {
+  logTestStatus(false)
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
   const msg = `Test ${FAIL} because ${reason}, see below.`
