@@ -446,10 +446,9 @@ function execRunScript({
 
   function assertNotExited(data: string) {
     if (!procExited) return
-    Logs.logErrors(true)
-    Logs.flushLogs()
-    logDebugInfo(data)
-    assert(false)
+    // Sometimes, a single white space is emitted after 'exit' has been emitted.
+    if (data.trim().length === 0) return
+    assert(false, { data: data, dataLength: data.length })
   }
 
   function processHasExited(): boolean {
@@ -584,18 +583,4 @@ function getPort(): string {
   const port = serverUrl.split(':').slice(-1)[0]!.split('/')[0]
   assert(/\d+/.test(port), { serverUrl })
   return port
-}
-
-function logDebugInfo(data: string) {
-  console.log('vvvvv DEBUG INFO vvvvv')
-  const testInfo = getCurrentTest()
-  console.log('testInfo.hasStartedRunning', testInfo.hasStartedRunning)
-  console.log('testInfo.skipped', testInfo.skipped)
-  console.log('testInfo.runInfo', testInfo.runInfo)
-  console.log('testInfo.testFile', testInfo.testFile)
-  console.log('testInfo.testName', testInfo.testName)
-  console.log('data', data)
-  console.log('data.length', data.length)
-  console.log('process.platform', process.platform)
-  console.log('^^^^^ DEBUG INFO ^^^^^')
 }

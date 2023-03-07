@@ -5,8 +5,13 @@ export { assertInfo }
 export { getProjectError }
 export { errorPrefix as projectErrorPrefix }
 
+import { logFailure } from '../runTests'
 import { createErrorWithCleanStackTrace } from './createErrorWithCleanStackTrace'
 import { projectInfo } from './projectInfo'
+import { Logs } from '../Logs'
+import { getCurrentTest } from '../getCurrentTest'
+import { logSection } from '../logSection'
+import { logError } from '../logError'
 
 const errorPrefix = `[${projectInfo.npmPackageName}]`
 const internalErrorPrefix = `${errorPrefix}[Bug]`
@@ -40,7 +45,13 @@ function assert(condition: unknown, debugInfo?: unknown): asserts condition {
     numberOfStackTraceLinesToRemove
   )
 
-  throw internalError
+  logFailure('a bug occurred in @brillout/test-e2e')
+  logError(internalError, 'BUG')
+  logDebugInfo()
+  Logs.logErrors(true)
+  Logs.flushLogs()
+
+  throw new Error('Bug. See messages above.')
 }
 
 function assertUsage(condition: unknown, errorMessage: string): asserts condition {
@@ -82,4 +93,15 @@ function assertInfo(condition: unknown, errorMessage: string): void {
     return
   }
   console.warn(`${infoPrefix} ${errorMessage}`)
+}
+
+function logDebugInfo() {
+  logSection('DEBUG INFO')
+  const testInfo = getCurrentTest()
+  console.log('testInfo.hasStartedRunning', testInfo.hasStartedRunning)
+  console.log('testInfo.skipped', testInfo.skipped)
+  console.log('testInfo.runInfo', testInfo.runInfo)
+  console.log('testInfo.testFile', testInfo.testFile)
+  console.log('testInfo.testName', testInfo.testName)
+  console.log('process.platform', process.platform)
 }

@@ -1,4 +1,5 @@
 export { runTests }
+export { logFailure }
 
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
@@ -7,13 +8,13 @@ import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
-import { logSection } from './logSection'
 import { setCurrentTest } from './getCurrentTest'
 
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
+import { logError } from './logError'
 
 async function runTests(filter: null | FindFilter) {
   await loadConfig()
@@ -198,11 +199,6 @@ function logFailure(reason: string) {
   const color = (s: string) => pc.red(pc.bold(s))
   const msg = `Test ${FAIL} because ${reason}, see below.`
   console.log(color(msg))
-}
-
-function logError(err: unknown) {
-  logSection('ERROR')
-  console.log(err)
 }
 
 function getStatusTags() {
