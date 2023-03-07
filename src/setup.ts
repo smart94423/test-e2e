@@ -448,7 +448,7 @@ function execRunScript({
     if (!procExited) return
     // Sometimes, a single white space is emitted after 'exit' has been emitted.
     if (data.trim().length === 0) return
-    assert(false, { data: data, dataLength: data.length })
+    assert(false, { data, dataLength: data.length })
   }
 
   function processHasExited(): boolean {
