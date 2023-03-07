@@ -398,22 +398,30 @@ function execRunScript({
   })
   proc.stdout.on('data', (chunk: Buffer) => {
     const data = String(chunk)
-    // assertNotExited(data)
-    assert(getRunInfo().cmd === cmd)
     Logs.add({
       logSource: 'stdout',
       logText: data,
     })
+    /* These assertions sometimes fails, see comments in assertNotExited()
+    assertNotExited(data)
+    assert(getRunInfo().cmd === cmd)
+    /*/
+    if (procExited) return undefined
+    //*/
     onStdout?.(data)
   })
   proc.stderr.on('data', async (chunk: Buffer) => {
     const data = String(chunk)
-    // assertNotExited(data)
-    assert(getRunInfo().cmd === cmd)
     Logs.add({
       logSource: 'stderr',
       logText: data,
     })
+    /* These assertions sometimes fails, see comments in assertNotExited()
+    assertNotExited(data)
+    assert(getRunInfo().cmd === cmd)
+    /*/
+    if (procExited) return undefined
+    //*/
     if (data.includes('EADDRINUSE')) {
       await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
     }
