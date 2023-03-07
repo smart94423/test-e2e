@@ -315,7 +315,7 @@ function stopProcess({
     //     [15:36:10.626][\examples\react][npm run preview][stderr] ELIFECYCLE
     //     ```
     //     Because stderr isn't empty, runTests() believes that the termination failed.
-    //   - taskkill somtimes throws:
+    //   - taskkill sometimes throws:
     //     ```
     //     ERROR: The process with PID 6052 (child process of PID 3184) could not be terminated.
     //     Reason: There is no running instance of the task.
