@@ -326,8 +326,13 @@ function stopProcess({
     //     There doesn't seem to be an option to suppress these errors: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
     spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
       stdio: [
-        'inherit', // stdin
-        'inherit', // stdout
+        'ignore', // stdin
+        // Ignore:
+        // ```
+        // SUCCESS: The process with PID 6932 (child process of PID 2744) has been terminated.
+        // ```
+        // (Setting 'inherit' instead of 'ignore' attaches stdout to the root process and not to `proc` which is why the stdout of taskkill isn't intercepted by `proc.stdout.on('data', () => /* ... */)`.
+        'ignore', // stdout
         // Ignoring stderr doesn't solve the problem that taskkill makes the process exit with code 1
         'inherit', // stderr
       ],
