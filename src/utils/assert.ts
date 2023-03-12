@@ -5,20 +5,18 @@ export { assertInfo }
 export { getProjectError }
 export { errorPrefix as projectErrorPrefix }
 
-import { logFail } from '../runTests'
 import { projectInfo } from './projectInfo'
 import { Logs } from '../Logs'
 import { getCurrentTest } from '../getCurrentTest'
 import { logSection } from '../logSection'
 import { logError } from '../logError'
+import { logFail } from '../logTestStatus'
 
 const errorPrefix = `[${projectInfo.npmPackageName}]`
 const internalErrorPrefix = `${errorPrefix}[Bug]`
 const usageErrorPrefix = `${errorPrefix}[Wrong Usage]`
 const warningPrefix = `${errorPrefix}[Warning]`
 const infoPrefix = `${errorPrefix}[Info]`
-
-const numberOfStackTraceLinesToRemove = 2
 
 function assert(condition: unknown, debugInfo?: unknown): asserts condition {
   if (condition) {

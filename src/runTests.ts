@@ -1,22 +1,18 @@
 export { runTests }
-export { logFail }
 
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
-import pc from 'picocolors'
 import { abortIfGitHubAction } from './github-action'
 import { setCurrentTest } from './getCurrentTest'
-
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
-
-let hasFailure = false
+import { hasTestFail, logFail, logPass, logWarn } from './logTestStatus'
 
 async function runTests(filter: null | FindFilter) {
   await loadConfig()
@@ -46,10 +42,11 @@ async function runTests(filter: null | FindFilter) {
 
   await browser.close()
 
-  if (hasFailedTest || hasFailure) {
-    // hasFailedTest and hasFailure are redundant
+  const hasFail = hasTestFail()
+  if (hasFailedTest || hasFail) {
+    // hasFailedTest and hasFail are redundant
     //  - When assert.ts calls logFail() this code block isn't run
-    assert(hasFailedTest && hasFailure)
+    assert(hasFailedTest && hasFail)
     throw new Error('A test failed. See messages above.')
   }
 }
@@ -67,7 +64,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
-    logWarn()
+    logWarn(testInfo.skipped)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
     return true
@@ -191,42 +188,4 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
   })()
 
   return promise
-}
-
-function logPass() {
-  logTestStatus(true)
-}
-function logWarn() {
-  logTestStatus(false)
-}
-
-function logTestStatus(success: boolean) {
-  const testInfo = getCurrentTest()
-  const { PASS, FAIL, WARN } = getStatusTags()
-  if (success) {
-    assert(!testInfo.skipped)
-    console.log(`${PASS} ${testInfo.testFile}`)
-    return
-  }
-  if (testInfo.skipped) {
-    console.log(`${WARN} ${testInfo.testFile} (${testInfo.skipped})`)
-  } else {
-    console.log(`${FAIL} ${testInfo.testFile}`)
-  }
-}
-
-function logFail(reason: string) {
-  hasFailure = true
-  logTestStatus(false)
-  const { FAIL } = getStatusTags()
-  const color = (s: string) => pc.red(pc.bold(s))
-  const msg = `Test ${FAIL} because ${reason}, see below.`
-  console.log(color(msg))
-}
-
-function getStatusTags() {
-  const PASS = pc.bold(pc.bgGreen(pc.white(' PASS ')))
-  const FAIL = pc.bold(pc.bgRed(pc.white(' FAIL ')))
-  const WARN = pc.bold(pc.bgYellow(pc.white(' WARN ')))
-  return { PASS, FAIL, WARN }
 }
