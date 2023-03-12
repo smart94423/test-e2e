@@ -25,14 +25,15 @@ async function runTests(filter: null | FindFilter) {
   for (const testFile of testFiles) {
     assert(testFile.endsWith('.ts'))
     const testFileJs = testFile.replace('.ts', '.mjs')
-    const clean = await buildTs(testFile, testFileJs)
+    const cleanBuild = await buildTs(testFile, testFileJs)
     setCurrentTest(testFile)
     try {
       await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
     } finally {
-      clean()
+      cleanBuild()
     }
-    const success = await runTestFile(browser)
+    const { success, clean } = await runTestFile(browser)
+    await clean()
     if (!success) {
       hasFailedTest = true
     }
@@ -51,7 +52,7 @@ async function runTests(filter: null | FindFilter) {
   }
 }
 
-async function runTestFile(browser: Browser): Promise<boolean> {
+async function runTestFile(browser: Browser): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
   const testInfo = getCurrentTest()
 
   if (isTTY) {
@@ -59,16 +60,16 @@ async function runTestFile(browser: Browser): Promise<boolean> {
     console.log(testInfo.testFile)
   }
 
-  const page = await browser.newPage()
-  testInfo.page = page
-
   // Set when user calls `skip()`
   if (testInfo.skipped) {
     logWarn(testInfo.skipped)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    return true
+    return { success: true, clean: async () => {} }
   }
+
+  const page = await browser.newPage()
+  testInfo.page = page
 
   // Set when user calls `run()`
   assert(testInfo.runInfo)
@@ -83,9 +84,9 @@ async function runTestFile(browser: Browser): Promise<boolean> {
     await testInfo.terminateServer?.()
     await page.close()
   }
-  const abort = async () => {
-    await clean()
+  const failure = () => {
     abortIfGitHubAction()
+    return { success: false, clean }
   }
 
   // TODO: resolve a success flag instead rejecting
@@ -95,8 +96,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
     logFail('an error occurred while starting the server')
     logError(err)
     Logs.flushLogs()
-    await abort()
-    return false
+    return failure()
   }
 
   for (const { testDesc, testFn } of testInfo.tests) {
@@ -128,14 +128,11 @@ async function runTestFile(browser: Browser): Promise<boolean> {
         }
         Logs.logErrors(failOnWarning)
         Logs.flushLogs()
-        await abort()
-        return false
+        return failure()
       }
     }
     Logs.clearLogs()
   }
-
-  await clean()
 
   // Check whether stderr emitted during testInfo.terminateServer()
   {
@@ -148,15 +145,14 @@ async function runTestFile(browser: Browser): Promise<boolean> {
       logFail(`${getErrorType(failOnWarning)} occurred during server termination`)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()
-      await abort()
-      return false
+      return failure()
     }
   }
 
   Logs.clearLogs()
   logPass()
 
-  return true
+  return { success: true, clean }
 }
 
 function getErrorType(failOnWarning: boolean) {
