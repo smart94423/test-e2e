@@ -23,7 +23,8 @@ type TestInfo = {
     serverIsReadyDelay: number
     inspect: boolean
     doNotFailOnWarning: boolean
-    serverUrl: string
+    serverUrl: string,
+    isFlaky: boolean
   }
   hasStartedRunning?: boolean
   skipped?: string

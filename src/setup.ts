@@ -61,6 +61,7 @@ function run(
     cwd,
     doNotFailOnWarning = false,
     serverUrl = serverUrlDefault,
+    isFlaky = false,
   }: {
     //baseUrl?: string
     additionalTimeout?: number
@@ -70,6 +71,7 @@ function run(
     cwd?: string
     doNotFailOnWarning?: boolean
     serverUrl?: string
+    isFlaky?: boolean
   } = {}
 ) {
   additionalTimeout += serverIsReadyDelay
@@ -85,6 +87,7 @@ function run(
     inspect,
     doNotFailOnWarning,
     serverUrl,
+    isFlaky,
   }
 
   if (inspect) {

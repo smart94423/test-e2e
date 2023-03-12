@@ -41,7 +41,7 @@ function assert(condition: unknown, debugInfo?: unknown): asserts condition {
     ].join(' ')
   )
 
-  logFail('a bug occurred in @brillout/test-e2e')
+  logFail('a bug occurred in @brillout/test-e2e', true)
   logError(internalError, 'BUG')
   logDebugInfo()
   Logs.logErrors(true)

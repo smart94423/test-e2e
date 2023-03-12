@@ -21,18 +21,26 @@ async function runAll(filter: null | FindFilter) {
 
   const browser = await getBrowser()
 
-  const failedTestFiles: string[] = []
+  const failedFirstAttempt: string[] = []
   for (const testFile of testFiles) {
     const success = await buildAndTest(testFile, browser, false)
     if (!success) {
-      failedTestFiles.push(testFile)
+      failedFirstAttempt.push(testFile)
+    }
+  }
+
+  const failedSecondAttempt: string[] = []
+  for (const testFile of failedFirstAttempt) {
+    const success = await buildAndTest(testFile, browser, true)
+    if (!success) {
+      failedSecondAttempt.push(testFile)
     }
   }
 
   await browser.close()
 
   const hasFailLog = hasFail()
-  const hasFailedTestFile = failedTestFiles.length > 0
+  const hasFailedTestFile = failedSecondAttempt.length > 0
   if (hasFailedTestFile || hasFailLog) {
     // hasFailedTestFile and hasFailLog are redundant
     //  - When assert.ts calls logFail() this code block isn't run
@@ -89,6 +97,7 @@ async function runTests(
   // Set when user calls `test()`
   assert(testInfo.tests)
 
+  const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
   const clean = async () => {
     await testInfo.terminateServer?.()
     await page.close()
@@ -98,11 +107,10 @@ async function runTests(
     return { success: false, clean }
   }
 
-  // TODO: resolve a success flag instead rejecting
   try {
     await testInfo.startServer()
   } catch (err) {
-    logFail('an error occurred while starting the server')
+    logFail('an error occurred while starting the server', isFinalAttempt)
     logError(err)
     Logs.flushLogs()
     return failure()
@@ -128,10 +136,10 @@ async function runTests(
       const isFailure = err || hasErrorLog
       if (isFailure) {
         if (err) {
-          logFail(`the test "${testDesc}" threw an error`)
+          logFail(`the test "${testDesc}" threw an error`, isFinalAttempt)
           logError(err)
         } else if (hasErrorLog) {
-          logFail(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
+          logFail(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`, isFinalAttempt)
         } else {
           assert(false)
         }
@@ -151,7 +159,7 @@ async function runTests(
       // See comments about taskkill in src/setup.ts
       !isWindows()
     ) {
-      logFail(`${getErrorType(failOnWarning)} occurred during server termination`)
+      logFail(`${getErrorType(failOnWarning)} occurred during server termination`, isFinalAttempt)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()
       return failure()

@@ -3,34 +3,38 @@ export { logWarn }
 export { logFail }
 export { hasFail }
 
-import { assert } from 'chai'
-import pc from 'picocolors'
 import { getCurrentTest } from './getCurrentTest'
+import { assert } from './utils'
+import pc from 'picocolors'
 
 function logPass() {
-  logStatus(true)
+  logStatus(false)
 }
 function logWarn(warning: string) {
   logStatus(false, warning)
 }
-function logFail(reason: string) {
-  logFailCalled = true
-  logStatus(false)
+function logFail(reason: string, isFinalAttempt: boolean) {
+  if (isFinalAttempt) {
+    logStatus(true)
+  } else {
+    logStatus(false, "Failed but marked as `isFlaky`; it'll be re-tried at the end.")
+  }
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
-  const msg = `Test ${FAIL} because ${reason}, see below.`
+  const msg = `Test ${isFinalAttempt ? FAIL : 'failed'} because ${reason}, see below.`
   console.log(color(msg))
 }
-function logStatus(success: boolean, warning?: string) {
+function logStatus(isFail: boolean, warning?: string) {
   const { testFile } = getCurrentTest()
   const { PASS, FAIL, WARN } = getStatusTags()
-  if (success) {
-    assert(!warning)
-    console.log(`${PASS} ${testFile}`)
-  } else if (warning) {
+  if (warning) {
+    assert(!isFail)
     console.log(`${WARN} ${testFile} (${warning})`)
-  } else {
+  } else if (isFail) {
+    hasFailLog = true
     console.log(`${FAIL} ${testFile}`)
+  } else {
+    console.log(`${PASS} ${testFile}`)
   }
 }
 function getStatusTags() {
@@ -40,7 +44,7 @@ function getStatusTags() {
   return { PASS, FAIL, WARN }
 }
 
-let logFailCalled = false
+let hasFailLog = false
 function hasFail(): boolean {
-  return logFailCalled
+  return hasFailLog
 }
