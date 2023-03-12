@@ -23,22 +23,10 @@ async function runAll(filter: null | FindFilter) {
 
   let hasFailedTest = false
   for (const testFile of testFiles) {
-    assert(testFile.endsWith('.ts'))
-    const testFileJs = testFile.replace('.ts', '.mjs')
-    const cleanBuild = await buildTs(testFile, testFileJs)
-    setCurrentTest(testFile)
-    try {
-      await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
-    } finally {
-      cleanBuild()
-    }
-    const { success, clean } = await runTests(browser)
-    await clean()
+    const success = await buildAndTest(testFile, browser)
     if (!success) {
       hasFailedTest = true
     }
-    setCurrentTest(null)
-    assert(testFileJs.endsWith('.mjs'))
   }
 
   await browser.close()
@@ -50,6 +38,23 @@ async function runAll(filter: null | FindFilter) {
     assert(hasFailedTest && hasFail)
     throw new Error('A test failed. See messages above.')
   }
+}
+
+async function buildAndTest(testFile: string, browser: Browser): Promise<boolean> {
+  assert(testFile.endsWith('.ts'))
+  const testFileJs = testFile.replace('.ts', '.mjs')
+  const cleanBuild = await buildTs(testFile, testFileJs)
+  setCurrentTest(testFile)
+  try {
+    await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
+  } finally {
+    cleanBuild()
+  }
+  const { success, clean } = await runTests(browser)
+  await clean()
+  setCurrentTest(null)
+  assert(testFileJs.endsWith('.mjs'))
+  return success
 }
 
 async function runTests(browser: Browser): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
