@@ -1,7 +1,7 @@
 export { logPass }
 export { logWarn }
 export { logFail }
-export { hasTestFail }
+export { hasFail }
 
 import { assert } from 'chai'
 import pc from 'picocolors'
@@ -14,7 +14,7 @@ function logWarn(warning: string) {
   logStatus(false, warning)
 }
 function logFail(reason: string) {
-  hasFail = true
+  logFailCalled = true
   logStatus(false)
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
@@ -40,7 +40,7 @@ function getStatusTags() {
   return { PASS, FAIL, WARN }
 }
 
-let hasFail = false
-function hasTestFail(): boolean {
-  return hasFail
+let logFailCalled = false
+function hasFail(): boolean {
+  return logFailCalled
 }

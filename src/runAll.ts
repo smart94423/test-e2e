@@ -12,7 +12,7 @@ import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
-import { hasTestFail, logFail, logPass, logWarn } from './logTestStatus'
+import { hasFail, logFail, logPass, logWarn } from './logTestStatus'
 
 async function runAll(filter: null | FindFilter) {
   await loadConfig()
@@ -21,26 +21,27 @@ async function runAll(filter: null | FindFilter) {
 
   const browser = await getBrowser()
 
-  let hasFailedTest = false
+  const failedTestFiles: string[] = []
   for (const testFile of testFiles) {
-    const success = await buildAndTest(testFile, browser)
+    const success = await buildAndTest(testFile, browser, false)
     if (!success) {
-      hasFailedTest = true
+      failedTestFiles.push(testFile)
     }
   }
 
   await browser.close()
 
-  const hasFail = hasTestFail()
-  if (hasFailedTest || hasFail) {
-    // hasFailedTest and hasFail are redundant
+  const hasFailLog = hasFail()
+  const hasFailedTestFile = failedTestFiles.length > 0
+  if (hasFailedTestFile || hasFailLog) {
+    // hasFailedTestFile and hasFailLog are redundant
     //  - When assert.ts calls logFail() this code block isn't run
-    assert(hasFailedTest && hasFail)
-    throw new Error('A test failed. See messages above.')
+    assert(hasFailedTestFile && hasFailLog)
+    throw new Error('Following tests failed, see logs above for more information.')
   }
 }
 
-async function buildAndTest(testFile: string, browser: Browser): Promise<boolean> {
+async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   assert(testFile.endsWith('.ts'))
   const testFileJs = testFile.replace('.ts', '.mjs')
   const cleanBuild = await buildTs(testFile, testFileJs)
@@ -50,14 +51,17 @@ async function buildAndTest(testFile: string, browser: Browser): Promise<boolean
   } finally {
     cleanBuild()
   }
-  const { success, clean } = await runTests(browser)
+  const { success, clean } = await runTests(browser, isSecondAttempt)
   await clean()
   setCurrentTest(null)
   assert(testFileJs.endsWith('.mjs'))
   return success
 }
 
-async function runTests(browser: Browser): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
+async function runTests(
+  browser: Browser,
+  isSecondAttempt: boolean
+): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
   const testInfo = getCurrentTest()
 
   if (isTTY) {
