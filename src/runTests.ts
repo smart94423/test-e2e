@@ -1,5 +1,5 @@
 export { runTests }
-export { logFailure }
+export { logFail }
 
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
@@ -32,7 +32,7 @@ async function runTests(filter: null | FindFilter) {
     const clean = await buildTs(testFile, testFileJs)
     setCurrentTest(testFile)
     try {
-      await import(fsWindowsBugWorkaround(testFileJs))
+      await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
     } finally {
       clean()
     }
@@ -48,7 +48,7 @@ async function runTests(filter: null | FindFilter) {
 
   if (hasFailedTest || hasFailure) {
     // hasFailedTest and hasFailure are redundant
-    //  - When assert.ts calls logFailure() this code block isn't run
+    //  - When assert.ts calls logFail() this code block isn't run
     assert(hasFailedTest && hasFailure)
     throw new Error('A test failed. See messages above.')
   }
@@ -67,7 +67,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
 
   // Set when user calls `skip()`
   if (testInfo.skipped) {
-    logTestStatus(false)
+    logWarn()
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
     return true
@@ -95,7 +95,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
   try {
     await testInfo.startServer()
   } catch (err) {
-    logFailure('an error occurred while starting the server')
+    logFail('an error occurred while starting the server')
     logError(err)
     Logs.flushLogs()
     await abort()
@@ -122,10 +122,10 @@ async function runTestFile(browser: Browser): Promise<boolean> {
       const isFailure = err || hasErrorLog
       if (isFailure) {
         if (err) {
-          logFailure(`the test "${testDesc}" threw an error`)
+          logFail(`the test "${testDesc}" threw an error`)
           logError(err)
         } else if (hasErrorLog) {
-          logFailure(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
+          logFail(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`)
         } else {
           assert(false)
         }
@@ -148,7 +148,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
       // See comments about taskkill in src/setup.ts
       !isWindows()
     ) {
-      logFailure(`${getErrorType(failOnWarning)} occurred during server termination`)
+      logFail(`${getErrorType(failOnWarning)} occurred during server termination`)
       Logs.logErrors(failOnWarning)
       Logs.flushLogs()
       await abort()
@@ -157,7 +157,7 @@ async function runTestFile(browser: Browser): Promise<boolean> {
   }
 
   Logs.clearLogs()
-  logTestStatus(true)
+  logPass()
 
   return true
 }
@@ -193,6 +193,13 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
   return promise
 }
 
+function logPass() {
+  logTestStatus(true)
+}
+function logWarn() {
+  logTestStatus(false)
+}
+
 function logTestStatus(success: boolean) {
   const testInfo = getCurrentTest()
   const { PASS, FAIL, WARN } = getStatusTags()
@@ -208,7 +215,7 @@ function logTestStatus(success: boolean) {
   }
 }
 
-function logFailure(reason: string) {
+function logFail(reason: string) {
   hasFailure = true
   logTestStatus(false)
   const { FAIL } = getStatusTags()

@@ -5,7 +5,7 @@ export { assertInfo }
 export { getProjectError }
 export { errorPrefix as projectErrorPrefix }
 
-import { logFailure } from '../runTests'
+import { logFail } from '../runTests'
 import { projectInfo } from './projectInfo'
 import { Logs } from '../Logs'
 import { getCurrentTest } from '../getCurrentTest'
@@ -43,7 +43,7 @@ function assert(condition: unknown, debugInfo?: unknown): asserts condition {
     ].join(' ')
   )
 
-  logFailure('a bug occurred in @brillout/test-e2e')
+  logFail('a bug occurred in @brillout/test-e2e')
   logError(internalError, 'BUG')
   logDebugInfo()
   Logs.logErrors(true)
