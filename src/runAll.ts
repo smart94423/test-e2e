@@ -1,4 +1,4 @@
-export { runTests }
+export { runAll }
 
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest } from './getCurrentTest'
@@ -14,7 +14,7 @@ import { loadConfig } from './getConfig'
 import { logError } from './logError'
 import { hasTestFail, logFail, logPass, logWarn } from './logTestStatus'
 
-async function runTests(filter: null | FindFilter) {
+async function runAll(filter: null | FindFilter) {
   await loadConfig()
 
   const testFiles = await findTestFiles(filter)
@@ -32,7 +32,7 @@ async function runTests(filter: null | FindFilter) {
     } finally {
       cleanBuild()
     }
-    const { success, clean } = await runTestFile(browser)
+    const { success, clean } = await runTests(browser)
     await clean()
     if (!success) {
       hasFailedTest = true
@@ -52,7 +52,7 @@ async function runTests(filter: null | FindFilter) {
   }
 }
 
-async function runTestFile(browser: Browser): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
+async function runTests(browser: Browser): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
   const testInfo = getCurrentTest()
 
   if (isTTY) {
