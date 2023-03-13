@@ -1,5 +1,5 @@
-export { abortIfGitHubAction }
-export { getTestFiles }
+export { abortIfParallelCI }
+export { getTestFilesForCurrentJob }
 
 import { assert } from './utils'
 import fs from 'fs'
@@ -7,16 +7,16 @@ import path from 'path'
 
 const cwd = process.cwd()
 
-function abortIfGitHubAction() {
-  if (isGitHubAction()) {
+function abortIfParallelCI() {
+  if (isParallelCI()) {
     process.exit(1)
   }
 }
-function isGitHubAction(): boolean {
-  return getTestFiles() !== null
+function isParallelCI(): boolean {
+  return getTestFilesForCurrentJob() !== null
 }
 
-function getTestFiles(): null | string[] {
+function getTestFilesForCurrentJob(): null | string[] {
   if (!('TEST_FILES' in process.env)) return null
   assert(process.env.TEST_FILES)
   const testFiles = process.env.TEST_FILES.split(' ').map((filePathRelative) => path.join(cwd, filePathRelative))

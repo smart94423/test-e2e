@@ -5,7 +5,7 @@ import { getCurrentTest } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
-import { abortIfGitHubAction } from './github-action'
+import { abortIfParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
@@ -104,7 +104,7 @@ async function runTests(
     await page.close()
   }
   const failure = () => {
-    if (!isFlaky) abortIfGitHubAction()
+    if (!isFlaky) abortIfParallelCI()
     return { success: false, clean }
   }
 
