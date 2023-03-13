@@ -52,6 +52,7 @@ async function runAll(filter: null | FindFilter) {
 async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   assert(testFile.endsWith('.ts'))
   const testFileJs = testFile.replace('.ts', '.mjs')
+  assert(testFileJs.endsWith('.mjs'))
   const cleanBuild = await buildTs(testFile, testFileJs)
   setCurrentTest(testFile)
   try {
@@ -62,7 +63,6 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
   const { success, clean } = await runTests(browser, isSecondAttempt)
   await clean()
   setCurrentTest(null)
-  assert(testFileJs.endsWith('.mjs'))
   return success
 }
 
