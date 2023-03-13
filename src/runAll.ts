@@ -67,6 +67,15 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
 
 async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
+
+  // Set when user calls `skip()`
+  if (testInfo.skipped) {
+    logWarn(testInfo.skipped)
+    assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
+    assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
+    return true
+  }
+
   // Set when user calls `run()`
   assert(testInfo.runInfo)
   assert(testInfo.startServer)
@@ -115,14 +124,6 @@ async function runTests(testInfo: TestInfo, isFinalAttempt: boolean): Promise<bo
   if (isTTY) {
     console.log()
     console.log(testInfo.testFile)
-  }
-
-  // Set when user calls `skip()`
-  if (testInfo.skipped) {
-    logWarn(testInfo.skipped)
-    assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
-    assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    return true
   }
 
   // Set when user calls `run()`
