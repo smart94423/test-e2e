@@ -330,11 +330,10 @@ function stopProcess({
     spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
       stdio: [
         'ignore', // stdin
-        // Ignore:
+        // Ignore following log to avoid polluting non-error logs. (Setting 'inherit' instead of 'ignore' attaches stdout to the root process and not to `proc` which is why the stdout of taskkill isn't intercepted by `proc.stdout.on('data', () => /* ... */)`.)
         // ```
         // SUCCESS: The process with PID 6932 (child process of PID 2744) has been terminated.
         // ```
-        // (Setting 'inherit' instead of 'ignore' attaches stdout to the root process and not to `proc` which is why the stdout of taskkill isn't intercepted by `proc.stdout.on('data', () => /* ... */)`.
         'ignore', // stdout
         // Ignoring stderr doesn't solve the problem that taskkill makes the process exit with code 1
         'inherit', // stderr
@@ -390,6 +389,7 @@ function execRunScript({
   const proc = spawn(command, args, { cwd, detached })
 
   let procExited = false
+  let procIsExiting = false
 
   const exitAndFail = async (err: Error) => {
     Logs.add({
@@ -430,6 +430,10 @@ function execRunScript({
     /*/
     if (procExited) return undefined
     //*/
+
+    // taskkill makes process exit with exit code `1`, which makes `npm run` emit error logs => we swallow these false errors. (See comments about taskkill in stopProcess().) Because the logs npm emits on stderr are convoluted and spread across multiple lines/chunks, we cannot easily be precise about what we swallow.
+    if (isWindows() && procIsExiting) return undefined
+
     if (data.includes('EADDRINUSE')) {
       await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
     }
@@ -477,9 +481,16 @@ function execRunScript({
   async function terminate(force?: true) {
     let resolve!: () => void
     let reject!: (err: Error) => void
+    procIsExiting = true
     const promise = new Promise<void>((_resolve, _reject) => {
-      resolve = _resolve
-      reject = _reject
+      resolve = () => {
+        procIsExiting = false
+        _resolve()
+      }
+      reject = () => {
+        procIsExiting = false
+        _reject()
+      }
     })
 
     const timeout = setTimeout(() => {
@@ -511,7 +522,6 @@ function execRunScript({
     clearTimeout(timeout)
     await exitPromise
     resolve()
-
     return promise
   }
 }
