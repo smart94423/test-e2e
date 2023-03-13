@@ -132,7 +132,7 @@ async function runTests(
     testInfo.afterEach(!!err)
     {
       const failOnWarning = !testInfo.runInfo.doNotFailOnWarning
-      const hasErrorLog = Logs.hasErrorLogs(failOnWarning)
+      const hasErrorLog = Logs.hasFailLogs(failOnWarning)
       const isFailure = err || hasErrorLog
       if (isFailure) {
         if (err) {
@@ -143,7 +143,7 @@ async function runTests(
         } else {
           assert(false)
         }
-        Logs.logErrors(failOnWarning)
+        Logs.logErrorsAndWarnings()
         Logs.flushLogs()
         return failure()
       }
@@ -155,12 +155,12 @@ async function runTests(
   {
     const failOnWarning = true
     if (
-      Logs.hasErrorLogs(failOnWarning) &&
+      Logs.hasFailLogs(failOnWarning) &&
       // See comments about taskkill in src/setup.ts
       !isWindows()
     ) {
       logFail(`${getErrorType(failOnWarning)} occurred during server termination`, isFinalAttempt)
-      Logs.logErrors(failOnWarning)
+      Logs.logErrorsAndWarnings()
       Logs.flushLogs()
       return failure()
     }

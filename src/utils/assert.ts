@@ -44,7 +44,7 @@ function assert(condition: unknown, debugInfo?: unknown): asserts condition {
   logFail('a bug occurred in @brillout/test-e2e', true)
   logError(internalError, 'BUG')
   logDebugInfo()
-  Logs.logErrors(true)
+  Logs.logErrorsAndWarnings()
   Logs.flushLogs()
 
   throw new Error('Bug. See messages above.')

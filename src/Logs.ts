@@ -2,9 +2,9 @@ export { expectError }
 export const Logs = {
   add,
   flushLogs,
-  logErrors,
+  logErrorsAndWarnings,
   clearLogs,
-  hasErrorLogs,
+  hasFailLogs,
   logEagerly: false,
 }
 
@@ -33,12 +33,12 @@ type LogEntry = {
 }
 let logEntries: LogEntry[] = []
 
-function hasErrorLogs(failOnWarning: boolean): boolean {
-  const errorLogs = getErrorLogs(failOnWarning)
-  return errorLogs.length > 0
+function hasFailLogs(failOnWarning: boolean): boolean {
+  const failLogs = getErrorLogs(failOnWarning)
+  return failLogs.length > 0
 }
 
-function getErrorLogs(failOnWarning: boolean) {
+function getErrorLogs(returnWarnings: boolean) {
   const errorLogs = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
@@ -46,7 +46,7 @@ function getErrorLogs(failOnWarning: boolean) {
     if (logSource === 'run() failure') {
       return true
     }
-    if (failOnWarning && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+    if (returnWarnings && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
     }
     if (logSource === 'Browser Error') {
@@ -61,11 +61,11 @@ function clearLogs() {
   logEntries = []
 }
 
-function logErrors(failOnWarning: boolean) {
-  if (!Logs.hasErrorLogs(failOnWarning)) return
-  logSection(`ERROR${!failOnWarning ? '' : '/WARNING'} LOGS`)
-  const errorLogs = getErrorLogs(failOnWarning)
-  errorLogs.forEach((logEntry) => printLog(logEntry))
+function logErrorsAndWarnings() {
+  const errorAndWarningLogs = getErrorLogs(true)
+  if (errorAndWarningLogs.length === 0) return
+  logSection('ERROR & WARNING LOGS')
+  errorAndWarningLogs.forEach((logEntry) => printLog(logEntry))
 }
 
 function flushLogs() {
