@@ -1,7 +1,7 @@
 export { runAll }
 
 import type { Browser } from 'playwright-chromium'
-import { getCurrentTest } from './getCurrentTest'
+import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
@@ -60,18 +60,57 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
   } finally {
     cleanBuild()
   }
-  const { success, clean } = await runTests(browser, isSecondAttempt)
-  await clean()
+  const success = await runServerAndTests(browser, isSecondAttempt)
   setCurrentTest(null)
   return success
 }
 
-async function runTests(
-  browser: Browser,
-  isSecondAttempt: boolean
-): Promise<{ success: boolean; clean: () => Promise<void | undefined> }> {
+async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
+  // Set when user calls `run()`
+  assert(testInfo.runInfo)
+  assert(testInfo.startServer)
+  assert(testInfo.terminateServer)
 
+  const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
+
+  try {
+    await testInfo.startServer()
+  } catch (err) {
+    logFailure(err, 'an error occurred while starting the server', isFinalAttempt)
+    return false
+  }
+
+  const page = await browser.newPage()
+  testInfo.page = page
+  let success = await runTests(testInfo, isFinalAttempt)
+
+  await testInfo.terminateServer()
+  await page.close()
+  // Check whether stderr emitted during testInfo.terminateServer()
+  if (success) {
+    const failOnWarning = true
+    if (
+      Logs.hasFailLogs(failOnWarning) &&
+      // See comments about taskkill in src/setup.ts
+      !isWindows()
+    ) {
+      logFailure(null, `${getErrorType(failOnWarning)} occurred during server termination`, isFinalAttempt)
+      success = false
+    }
+  }
+
+  if (!success && !testInfo.runInfo.isFlaky) abortIfParallelCI()
+
+  if (success) {
+    logPass()
+  }
+  Logs.clearLogs()
+
+  return success
+}
+
+async function runTests(testInfo: TestInfo, isFinalAttempt: boolean): Promise<boolean> {
   if (isTTY) {
     console.log()
     console.log(testInfo.testFile)
@@ -82,41 +121,14 @@ async function runTests(
     logWarn(testInfo.skipped)
     assertUsage(!testInfo.runInfo, 'You cannot call `run()` after calling `skip()`')
     assertUsage(testInfo.tests === undefined, 'You cannot call `test()` after calling `skip()`')
-    return { success: true, clean: async () => {} }
+    return true
   }
-
-  const page = await browser.newPage()
-  testInfo.page = page
 
   // Set when user calls `run()`
   assert(testInfo.runInfo)
-  assert(testInfo.startServer)
-  assert(testInfo.terminateServer)
   assert(testInfo.afterEach)
-
   // Set when user calls `test()`
   assert(testInfo.tests)
-
-  const { isFlaky } = testInfo.runInfo
-  const isFinalAttempt: boolean = isSecondAttempt || !isFlaky
-  const clean = async () => {
-    await testInfo.terminateServer?.()
-    await page.close()
-  }
-  const failure = () => {
-    if (!isFlaky) abortIfParallelCI()
-    return { success: false, clean }
-  }
-
-  try {
-    await testInfo.startServer()
-  } catch (err) {
-    logFail('an error occurred while starting the server', isFinalAttempt)
-    logError(err)
-    Logs.flushLogs()
-    return failure()
-  }
-
   for (const { testDesc, testFn } of testInfo.tests) {
     Logs.add({
       logSource: 'test()',
@@ -137,40 +149,32 @@ async function runTests(
       const isFailure = err || hasErrorLog
       if (isFailure) {
         if (err) {
-          logFail(`the test "${testDesc}" threw an error`, isFinalAttempt)
-          logError(err)
+          logFailure(err, `the test "${testDesc}" threw an error`, isFinalAttempt)
         } else if (hasErrorLog) {
-          logFail(`${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`, isFinalAttempt)
+          logFailure(
+            null,
+            `${getErrorType(failOnWarning)} occurred while running the test "${testDesc}"`,
+            isFinalAttempt
+          )
         } else {
           assert(false)
         }
-        Logs.logErrorsAndWarnings()
-        Logs.flushLogs()
-        return failure()
+        return false
       }
     }
     Logs.clearLogs()
   }
 
-  // Check whether stderr emitted during testInfo.terminateServer()
-  {
-    const failOnWarning = true
-    if (
-      Logs.hasFailLogs(failOnWarning) &&
-      // See comments about taskkill in src/setup.ts
-      !isWindows()
-    ) {
-      logFail(`${getErrorType(failOnWarning)} occurred during server termination`, isFinalAttempt)
-      Logs.logErrorsAndWarnings()
-      Logs.flushLogs()
-      return failure()
-    }
+  return true
+}
+
+function logFailure(err: null | unknown, reason: string, isFinalAttempt: boolean) {
+  logFail(reason, isFinalAttempt)
+  if (err) {
+    logError(err)
   }
-
-  Logs.clearLogs()
-  logPass()
-
-  return { success: true, clean }
+  Logs.logErrorsAndWarnings()
+  Logs.flushLogs()
 }
 
 function getErrorType(failOnWarning: boolean) {

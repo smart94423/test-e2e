@@ -1,6 +1,7 @@
 export { getCurrentTest }
 export { getCurrentTestOptional }
 export { setCurrentTest }
+export type { TestInfo }
 
 import type { Page } from 'playwright-chromium'
 import { assert } from './utils'
