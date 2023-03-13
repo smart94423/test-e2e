@@ -74,6 +74,9 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
 
   const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
 
+  const page = await browser.newPage()
+  testInfo.page = page
+
   try {
     await testInfo.startServer()
   } catch (err) {
@@ -81,8 +84,6 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
     return false
   }
 
-  const page = await browser.newPage()
-  testInfo.page = page
   let success = await runTests(testInfo, isFinalAttempt)
 
   await testInfo.terminateServer()
