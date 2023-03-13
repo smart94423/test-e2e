@@ -38,7 +38,7 @@ function hasFailLogs(failOnWarning: boolean): boolean {
   return failLogs.length > 0
 }
 
-function getErrorLogs(returnWarnings: boolean) {
+function getErrorLogs(includeWarnings: boolean) {
   const errorLogs = logEntries.filter(({ logSource, isNotFailure }) => {
     if (isNotFailure) {
       return
@@ -46,7 +46,7 @@ function getErrorLogs(returnWarnings: boolean) {
     if (logSource === 'run() failure') {
       return true
     }
-    if (returnWarnings && (logSource === 'Browser Warning' || logSource === 'stderr')) {
+    if (includeWarnings && (logSource === 'Browser Warning' || logSource === 'stderr')) {
       return true
     }
     if (logSource === 'Browser Error') {
