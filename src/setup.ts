@@ -389,7 +389,6 @@ function execRunScript({
   const proc = spawn(command, args, { cwd, detached })
 
   let procExited = false
-  let procIsExiting = false
 
   const exitAndFail = async (err: Error) => {
     Logs.add({
@@ -409,13 +408,8 @@ function execRunScript({
     Logs.add({
       logSource: 'stdout',
       logText: data,
+      loggedAfterExit: procExited,
     })
-    /* These assertions sometimes fail, see comments in assertNotExited()
-    assertNotExited(data)
-    assert(getRunInfo().cmd === cmd)
-    /*/
-    if (procExited) return undefined
-    //*/
     onStdout?.(data)
   })
   proc.stderr.on('data', async (chunk: Buffer) => {
@@ -423,17 +417,8 @@ function execRunScript({
     Logs.add({
       logSource: 'stderr',
       logText: data,
+      loggedAfterExit: procExited,
     })
-    /* These assertions sometimes fail, see comments in assertNotExited()
-    assertNotExited(data)
-    assert(getRunInfo().cmd === cmd)
-    /*/
-    if (procExited) return undefined
-    //*/
-
-    // taskkill makes process exit with exit code `1`, which makes `npm run` emit error logs => we swallow these false errors. (See comments about taskkill in stopProcess().) Because the logs npm emits on stderr are convoluted and spread across multiple lines/chunks, we cannot easily be precise about what we swallow.
-    if (isWindows() && procIsExiting) return undefined
-
     if (data.includes('EADDRINUSE')) {
       await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
     }
@@ -464,16 +449,6 @@ function execRunScript({
 
   return { terminate, processHasExited }
 
-  /* Node.js seems to occasionally emit 'data' events after having the emitted 'exit' event, for example:
-   *  - `{"data":"[0] npm run serve:cdn  exited with code SIGTERM\n","dataLength":48}`.
-  function assertNotExited(data: string) {
-    if (!procExited) return
-    // Sometimes, a single white space is emitted after 'exit' has been emitted.
-    if (data.trim().length === 0) return
-    assert(false, { data, dataLength: data.length })
-  }
-  */
-
   function processHasExited(): boolean {
     return procExited
   }
@@ -481,14 +456,11 @@ function execRunScript({
   async function terminate(force?: true) {
     let resolve!: () => void
     let reject!: (err: Error) => void
-    procIsExiting = true
     const promise = new Promise<void>((_resolve, _reject) => {
       resolve = () => {
-        procIsExiting = false
         _resolve()
       }
       reject = () => {
-        procIsExiting = false
         _reject()
       }
     })

@@ -8,7 +8,7 @@ export const Logs = {
   logEagerly: false,
 }
 
-import { assert, ensureNewTerminalLine } from './utils'
+import { assert, ensureNewTerminalLine, isWindows } from './utils'
 import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
 import { getConfig } from './getConfig'
@@ -30,6 +30,7 @@ type LogEntry = {
   logText: string
   logTimestamp: string
   isNotFailure: boolean
+  loggedAfterExit: boolean
 }
 let logEntries: LogEntry[] = []
 
@@ -39,9 +40,13 @@ function hasFailLogs(failOnWarning: boolean): boolean {
 }
 
 function getErrorLogs(includeWarnings: boolean) {
-  const errorLogs = logEntries.filter(({ logSource, isNotFailure }) => {
+  const errorLogs = logEntries.filter(({ logSource, isNotFailure, loggedAfterExit }) => {
     if (isNotFailure) {
-      return
+      return false
+    }
+    // taskkill makes process exit with exit code `1` which makes npm emit logs on stderr
+    if (loggedAfterExit && isWindows() && logSource === 'stderr') {
+      return false
     }
     if (logSource === 'run() failure') {
       return true
@@ -70,10 +75,18 @@ function logErrorsAndWarnings() {
 
 function flushLogs() {
   logSection('ALL LOGS')
-  logEntries.forEach((logEntry) => printLog(logEntry))
+  logEntries.filter((logEntry) => !logEntry.loggedAfterExit).forEach((logEntry) => printLog(logEntry))
   logEntries = []
 }
-function add({ logSource, logText }: { logSource: LogSource; logText: string }) {
+function add({
+  logSource,
+  logText,
+  loggedAfterExit = false,
+}: {
+  logSource: LogSource
+  logText: string
+  loggedAfterExit?: boolean
+}) {
   const logTimestamp = getTimestamp()
 
   const isNotFailure = (() => {
@@ -92,6 +105,7 @@ function add({ logSource, logText }: { logSource: LogSource; logText: string }) 
     logText,
     logTimestamp,
     isNotFailure,
+    loggedAfterExit,
   }
   logEntries.push(logEntry)
   if (Logs.logEagerly) {
