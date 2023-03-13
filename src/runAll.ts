@@ -97,13 +97,14 @@ async function runTests(
   // Set when user calls `test()`
   assert(testInfo.tests)
 
-  const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
+  const { isFlaky } = testInfo.runInfo
+  const isFinalAttempt: boolean = isSecondAttempt || !isFlaky
   const clean = async () => {
     await testInfo.terminateServer?.()
     await page.close()
   }
   const failure = () => {
-    abortIfGitHubAction()
+    if (!isFlaky) abortIfGitHubAction()
     return { success: false, clean }
   }
 
