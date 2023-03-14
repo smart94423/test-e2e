@@ -41,12 +41,13 @@ function hasFailLogs(failOnWarning: boolean): boolean {
 }
 
 function getErrorLogs(includeWarnings: boolean) {
-  const errorLogs = logEntries.filter(({ logSource, isNotFailure, loggedAfterExit }) => {
-    if (isNotFailure) {
+  const errorLogs = logEntries.filter((logEntry) => {
+    if (logEntry.isNotFailure) {
       return false
     }
+    const { logSource } = logEntry
     // taskkill makes process exit with exit code `1` which makes npm emit logs on stderr
-    if (loggedAfterExit && isWindows() && logSource === 'stderr') {
+    if (logEntry.loggedAfterExit && isWindows() && logSource === 'stderr') {
       return false
     }
     if (logSource === 'run() failure') {
@@ -90,13 +91,11 @@ function add({
 }) {
   const logTimestamp = getTimestamp()
 
-  const isNotFailure = isTolerateError({ logSource, logText })
-
   const logEntry = {
     logSource,
     logText,
     logTimestamp,
-    isNotFailure,
+    isNotFailure: isTolerateError({ logSource, logText }),
     loggedAfterExit,
   }
   logEntries.push(logEntry)
