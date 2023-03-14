@@ -17,7 +17,7 @@ function isTolerateError({ logSource, logText }: LogData): boolean {
 }
 
 function tolerateError({ logSource, logText }: LogData): boolean {
-  return isFetchExperimentalWarning() && isTerminationEPIPE()
+  return isFetchExperimentalWarning() || isTerminationEPIPE()
 
   function isFetchExperimentalWarning() {
     return (
