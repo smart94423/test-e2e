@@ -6,10 +6,10 @@ import fs from 'fs'
 import { assert, assertUsage, fsWindowsBugWorkaround, isCallable, isObject } from './utils'
 
 const configFileName = 'test-e2e.config.mjs'
-const errPrefix = `Config file \`${configFileName}\` `
 
 type Config = {
   tolerateError?: Function
+  tolerateSkip?: boolean
 }
 
 let config: null | Config = null
@@ -21,18 +21,25 @@ function getConfig(): Config {
 
 async function loadConfig(): Promise<void> {
   const configFilePath = find()
-  assertUsage(configFilePath, errPrefix + 'not found')
+  assertUsage(configFilePath, `${configFileName} not found`)
   const configFileExports = (await import(fsWindowsBugWorkaround(configFilePath))) as Record<string, unknown>
-  assertUsage('default' in configFileExports, errPrefix + 'should have a default export')
+  assertUsage('default' in configFileExports, `${configFileName} should have a default export`)
   assertConfig(configFileExports.default)
   config = configFileExports.default
 }
 
 function assertConfig(config: unknown): asserts config is Config {
-  assertUsage(isObject(config), errPrefix + 'default export should be an object')
-  if ('tolerateError' in config) {
-    assertUsage(isCallable(config.tolerateError), errPrefix + '`tolerateError` should be a function')
-  }
+  assertUsage(isObject(config), `${configFileName} default export should be an object`)
+  Object.entries(config).forEach(([key, val]) => {
+    const wrongType = `${configFileName} export default { ${key} } should be a` as const
+    if (key === 'tolerateError') {
+      assertUsage(isCallable(val), `${wrongType} function`)
+    } else if (key === 'tolerateSkip') {
+      assertUsage(typeof val === 'boolean', `${wrongType} boolean`)
+    } else {
+      assertUsage(false, `${configFileName} unknown config ${key}`)
+    }
+  })
 }
 
 function find(): null | string {

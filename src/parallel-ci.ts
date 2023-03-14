@@ -1,3 +1,4 @@
+export { isParallelCI }
 export { abortIfParallelCI }
 export { getTestFilesForCurrentJob }
 
