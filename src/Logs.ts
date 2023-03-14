@@ -7,12 +7,13 @@ export const Logs = {
   hasFailLogs,
   logEagerly: false,
 }
+export type { LogSource }
 
 import { assert, ensureNewTerminalLine, isWindows } from './utils'
 import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
-import { getConfig } from './getConfig'
 import { logSection } from './logSection'
+import { isTolerateError } from './Logs/isTolerateError'
 
 type LogSource =
   | 'stdout'
@@ -89,16 +90,7 @@ function add({
 }) {
   const logTimestamp = getTimestamp()
 
-  const isNotFailure = (() => {
-    const config = getConfig()
-    if (!config.tolerateError) {
-      return false
-    }
-    return config.tolerateError({
-      logSource,
-      logText,
-    })
-  })()
+  const isNotFailure = isTolerateError({ logSource, logText })
 
   const logEntry = {
     logSource,
