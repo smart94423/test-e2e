@@ -10,10 +10,10 @@ function isTolerateError({ logSource, logText }: LogData): boolean {
     return true
   }
   const config = getConfig()
-  if (!config.tolerateError) {
-    return false
+  if (config.tolerateError?.({ logSource, logText })) {
+    return true
   }
-  return config.tolerateError({ logSource, logText })
+  return false
 }
 
 function tolerateError({ logSource, logText }: LogData): boolean {
