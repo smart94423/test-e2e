@@ -5,7 +5,7 @@ import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
-import { abortIfParallelCI, isParallelCI } from './parallel-ci'
+import { isParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
@@ -82,6 +82,12 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
 
   const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
 
+  const abortMaybe = () => {
+    if (isFinalAttempt && isParallelCI()) {
+      process.exit(1)
+    }
+  }
+
   const page = await browser.newPage()
   testInfo.page = page
 
@@ -89,6 +95,7 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
     await testInfo.startServer()
   } catch (err) {
     logFailure(err, 'an error occurred while starting the server', isFinalAttempt)
+    abortMaybe()
     return false
   }
 
@@ -109,10 +116,10 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
     }
   }
 
-  if (!success && !testInfo.runInfo.isFlaky) abortIfParallelCI()
-
   if (success) {
     logPass()
+  } else {
+    abortMaybe()
   }
   Logs.clearLogs()
 

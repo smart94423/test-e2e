@@ -1,5 +1,4 @@
 export { isParallelCI }
-export { abortIfParallelCI }
 export { getTestFilesForCurrentJob }
 
 import { assert } from './utils'
@@ -8,11 +7,6 @@ import path from 'path'
 
 const cwd = process.cwd()
 
-function abortIfParallelCI() {
-  if (isParallelCI()) {
-    process.exit(1)
-  }
-}
 function isParallelCI(): boolean {
   return getTestFilesForCurrentJob() !== null
 }
