@@ -10,7 +10,7 @@ import { setCurrentTest } from './getCurrentTest'
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
-import { loadConfig, getConfig } from './getConfig'
+import { loadConfig } from './getConfig'
 import { logError } from './logError'
 import { hasFail, logFail, logPass, logWarn } from './logTestStatus'
 
@@ -71,7 +71,7 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
   // Set when user calls `skip()`
   if (testInfo.skipped) {
     assertSkipUsage(testInfo)
-    logWarn(testInfo.skipped)
+    logWarn(testInfo.skipped.reason)
     return true
   }
 
@@ -217,6 +217,7 @@ function runTest(testFn: Function, testFunctionTimeout: number): Promise<undefin
 }
 
 function assertSkipUsage(testInfo: TestInfo) {
+  assert(testInfo.skipped)
   {
     const err = 'You cannot call run() after calling skip()'
     assertUsage(testInfo.runInfo === undefined, err)
@@ -224,14 +225,5 @@ function assertSkipUsage(testInfo: TestInfo) {
   {
     const err = 'You cannot call test() after calling skip()'
     assertUsage(testInfo.tests === undefined, err)
-  }
-  const config = getConfig()
-  {
-    const err = 'Using skip() while config tolerateSkip is set to false'
-    assertUsage(config.tolerateSkip !== false, err)
-  }
-  {
-    const err = 'Using skip() while config tolerateSkip is set to undefined and tests are running in a parallel CI'
-    assertUsage(!(config.tolerateSkip === undefined && isParallelCI()), err)
   }
 }

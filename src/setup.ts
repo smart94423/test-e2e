@@ -47,7 +47,7 @@ const TIMEOUT_PLAYWRIGHT = TIMEOUT_TEST_FUNCTION / 2
 
 function skip(reason: string) {
   const testInfo = getCurrentTest()
-  testInfo.skipped = reason
+  testInfo.skipped = { reason }
 }
 
 function run(

@@ -9,7 +9,6 @@ const configFileName = 'test-e2e.config.mjs'
 
 type Config = {
   tolerateError?: Function
-  tolerateSkip?: boolean
   ci?: never
 }
 
@@ -35,8 +34,6 @@ function assertConfig(config: unknown): asserts config is Config {
     const wrongType = `${configFileName} export default { ${key} } should be a` as const
     if (key === 'tolerateError') {
       assertUsage(isCallable(val), `${wrongType} function`)
-    } else if (key === 'tolerateSkip') {
-      assertUsage(typeof val === 'boolean', `${wrongType} boolean`)
     } else if (key === 'ci') {
       // Only used by .github/workflows/ci/getTestJobs.mjs
       // https://github.com/brillout/vite-plugin-ssr/blob/4fa329e4081655c39c4c70436ae73e563489439e/.github/workflows/ci/getTestJobs.mjs#L72

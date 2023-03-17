@@ -91,7 +91,7 @@ function logDebugInfo() {
   logSection('DEBUG INFO')
   const testInfo = getCurrentTest()
   console.log('testInfo.hasStartedRunning', testInfo.hasStartedRunning)
-  console.log('testInfo.skipped', testInfo.skipped)
+  console.log('testInfo.skipped?.reason', testInfo.skipped?.reason)
   console.log('testInfo.runInfo', testInfo.runInfo)
   console.log('testInfo.testFile', testInfo.testFile)
   console.log('testInfo.testName', testInfo.testName)
