@@ -3,7 +3,7 @@ export { runAll }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isTTY, isWindows, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isCI, isTTY, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import { isParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
@@ -21,12 +21,29 @@ async function runAll(filter: null | FindFilter) {
 
   const browser = await getBrowser()
 
+  const hasFailedTestFile = await runTestFiles(testFiles, browser)
+
+  await browser.close()
+
+  const hasFailLog = hasFail()
+  if (hasFailedTestFile || hasFailLog) {
+    // hasFailedTestFile and hasFailLog are redundant
+    //  - When assert.ts calls logFail() this code block isn't run
+    assert(hasFailedTestFile && hasFailLog)
+    throw new Error('Following tests failed, see logs above for more information.')
+  }
+}
+
+async function runTestFiles(testFiles: string[], browser: Browser): Promise<boolean> {
   const failedFirstAttempt: string[] = []
   for (const testFile of testFiles) {
     const success = await buildAndTest(testFile, browser, false)
     if (!success) {
       failedFirstAttempt.push(testFile)
     }
+  }
+  if (!isCI()) {
+    return failedFirstAttempt.length > 0
   }
 
   const failedSecondAttempt: string[] = []
@@ -37,16 +54,7 @@ async function runAll(filter: null | FindFilter) {
     }
   }
 
-  await browser.close()
-
-  const hasFailLog = hasFail()
-  const hasFailedTestFile = failedSecondAttempt.length > 0
-  if (hasFailedTestFile || hasFailLog) {
-    // hasFailedTestFile and hasFailLog are redundant
-    //  - When assert.ts calls logFail() this code block isn't run
-    assert(hasFailedTestFile && hasFailLog)
-    throw new Error('Following tests failed, see logs above for more information.')
-  }
+  return failedSecondAttempt.length > 0
 }
 
 async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
