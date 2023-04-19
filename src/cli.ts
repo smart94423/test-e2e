@@ -1,3 +1,7 @@
+/* Track down log origins
+import './utils/trackLogs'
+//*/
+
 import sourceMapSupport from 'source-map-support'
 import { assert, findFilesParseCliArgs, fsWindowsBugWorkaroundPrefix } from './utils'
 import { runAll } from './runAll'
