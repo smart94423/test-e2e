@@ -195,7 +195,7 @@ async function start(): Promise<RunProcess> {
     console.log()
     logBoot()
   }
-  const done = logProgress(`| [run] ${cmd}`)
+  const done = logProgress(`[run] ${cmd}`)
 
   let hasSuccessfullyStarted = false
   let resolveServerStart: () => void

@@ -152,7 +152,7 @@ async function runTests(testInfo: TestInfo, isFinalAttempt: boolean): Promise<bo
       logSource: 'test()',
       logText: testDesc,
     })
-    const done = logProgress(`| [test] ${testDesc}`)
+    const done = logProgress(`[test] ${testDesc}`)
     let err: unknown
     try {
       await runTest(testFn, testInfo.runInfo.testFunctionTimeout)
