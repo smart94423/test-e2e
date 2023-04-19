@@ -21,20 +21,27 @@ async function runAll(filter: null | FindFilter) {
 
   const browser = await getBrowser()
 
-  const hasFailedTestFile = await runTestFiles(testFiles, browser)
+  const failedTestFiles = await runTestFiles(testFiles, browser)
 
   await browser.close()
 
+  const hasFailedTestFile = failedTestFiles.length > 0
   const hasFailLog = hasFail()
   if (hasFailedTestFile || hasFailLog) {
     // hasFailedTestFile and hasFailLog are redundant
     //  - When assert.ts calls logFail() this code block isn't run
     assert(hasFailedTestFile && hasFailLog)
-    throw new Error('Following tests failed, see logs above for more information.')
+    assert(failedTestFiles.length > 0)
+    throw new Error(
+      [
+        'Following test files failed, see all the logs printed above for more information.',
+        ...failedTestFiles.map((testFile) => `  ${testFile}`),
+      ].join('\n')
+    )
   }
 }
 
-async function runTestFiles(testFiles: string[], browser: Browser): Promise<boolean> {
+async function runTestFiles(testFiles: string[], browser: Browser): Promise<string[]> {
   const failedFirstAttempt: string[] = []
   for (const testFile of testFiles) {
     const success = await buildAndTest(testFile, browser, false)
@@ -43,7 +50,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<bool
     }
   }
   if (!isCI()) {
-    return failedFirstAttempt.length > 0
+    return failedFirstAttempt
   }
 
   const failedSecondAttempt: string[] = []
@@ -54,7 +61,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<bool
     }
   }
 
-  return failedSecondAttempt.length > 0
+  return failedSecondAttempt
 }
 
 async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
