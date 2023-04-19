@@ -1,6 +1,7 @@
 export { logPass }
 export { logWarn }
 export { logFail }
+export { logBoot }
 export { hasFail }
 
 import { getCurrentTest } from './getCurrentTest'
@@ -41,7 +42,14 @@ function getStatusTags() {
   const PASS = pc.bold(pc.white(pc.bgGreen(' PASS ')))
   const FAIL = pc.bold(pc.white(pc.bgRed(' FAIL ')))
   const WARN = pc.bold(pc.white(pc.bgYellow(' WARN ')))
-  return { PASS, FAIL, WARN }
+  const BOOT = pc.bold(pc.white(pc.bgBlack(' BOOT ')))
+  return { PASS, FAIL, WARN, BOOT }
+}
+
+function logBoot() {
+  const { testFile } = getCurrentTest()
+  const { BOOT } = getStatusTags()
+  console.log(`${BOOT} ${testFile}`)
 }
 
 let hasFailLog = false

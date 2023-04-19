@@ -13,6 +13,7 @@ import {
   isCI,
   isMac,
   isCallable,
+  isTTY,
 } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
@@ -21,6 +22,7 @@ import stripAnsi from 'strip-ansi'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getCurrentTest } from './getCurrentTest'
 import { page } from './page'
+import { logBoot } from './logTestStatus'
 
 export { partRegex } from '@brillout/part-regex'
 export { autoRetry }
@@ -189,6 +191,10 @@ type RunProcess = {
 }
 async function start(): Promise<RunProcess> {
   const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
+  if (isTTY) {
+    console.log()
+    logBoot()
+  }
   const done = logProgress(`| [run] ${cmd}`)
 
   let hasSuccessfullyStarted = false
