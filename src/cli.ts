@@ -31,6 +31,7 @@ function initUserExitHandler() {
   })
 }
 
+// Much simpler alternative: https://github.com/brillout/vite-plugin-ssr/blob/77b1b0e8b6c1ed4efe3e3039f7c0b23a00651663/vite-plugin-ssr/node/plugin/plugins/importUserCode/v1-design/transpileAndLoadFile.ts#L200-L208
 function initSourceMap() {
   sourceMapSupport.install({
     retrieveSourceMap: function (source) {
