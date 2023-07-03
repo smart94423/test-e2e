@@ -313,6 +313,9 @@ function stopProcess({
   }
   proc.on('close', onProcessClose)
   proc.on('exit', onProcessClose)
+
+  const { pid } = proc
+  assert(pid)
   if (isWindows()) {
     // - https://github.com/nodejs/node/issues/3617#issuecomment-377731194
     // - https://stackoverflow.com/questions/23706055/why-can-i-not-kill-my-child-process-in-nodejs-on-windows/28163919#28163919
@@ -337,7 +340,8 @@ function stopProcess({
     //     ERROR: The process "6564" not found.
     //     ```
     //     There doesn't seem to be an option to suppress these errors: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill#parameters
-    spawn('taskkill', ['/pid', String(proc.pid), '/f', '/t'], {
+    assert(typeof pid === 'number')
+    spawn('taskkill', ['/pid', String(pid), '/f', '/t'], {
       stdio: [
         'ignore', // stdin
         // Ignore following log to avoid polluting non-error logs. (Setting 'inherit' instead of 'ignore' attaches stdout to the root process and not to `proc` which is why the stdout of taskkill isn't intercepted by `proc.stdout.on('data', () => /* ... */)`.)
@@ -350,8 +354,8 @@ function stopProcess({
       ],
     })
   } else {
-    assert(proc.pid)
-    const processGroup = -1 * proc.pid
+    assert(typeof pid === 'number')
+    const processGroup = -1 * pid
     const signal = force ? 'SIGKILL' : 'SIGTERM'
     process.kill(processGroup, signal)
     /*
@@ -415,7 +419,7 @@ function runCommandLongRunning({
       reject_(err)
       if (!alreadyTerminated) {
         assert(!procExited)
-        await terminate(true)
+        await terminateProc(true)
       }
       assert(procExited)
     }
@@ -497,9 +501,15 @@ function runCommandLongRunning({
     exitPromiseResolve()
   })
 
-  return { terminate, isReadyPromise }
+  return {
+    isReadyPromise,
+    async terminate() {
+      if (procExited) return
+      await terminateProc()
+    },
+  }
 
-  async function terminate(force?: true) {
+  async function terminateProc(force?: true) {
     let resolve!: () => void
     let reject!: (err: Error) => void
     const promise = new Promise<void>((resolve_, reject_) => {
@@ -537,6 +547,7 @@ function runCommandLongRunning({
 
 async function killByPort(port: number) {
   assert(isLinux())
+  assert(port)
   await runCommandShortLived(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
 }
 
