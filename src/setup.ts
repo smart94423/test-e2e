@@ -253,8 +253,8 @@ async function start(): Promise<RunProcess> {
     },
     onExit() {
       assert(processHasExited())
-      const exitIsPossible = hasSuccessfullyStarted === true || hasTimedout
-      return exitIsPossible
+      const exitIsExpected = hasSuccessfullyStarted === true || hasTimedout
+      return exitIsExpected
     },
     async onStdout(data: string) {
       const log = stripAnsi(data)
@@ -434,11 +434,15 @@ function execRunScript({
   proc.on('exit', (code) => {
     procExited = true
     assert(getRunInfo().cmd === cmd)
-    const exitIsPossible = onExit()
+    const exitIsExpected = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
-    const isExpected = isSuccessCode && exitIsPossible
-    if (!isExpected) {
-      const errMsg = `Unexpected premature process termination, exit code: ${code}`
+    let errMsg: string | undefined
+    if (!isSuccessCode) {
+      errMsg = `Unexpected error while running command \`${cmd}\` with exit code ${code}`
+    } else if (!exitIsExpected) {
+      errMsg = 'Unexpected premature process termination'
+    }
+    if (errMsg) {
       Logs.add({
         logText: errMsg,
         logSource: 'run() failure',
@@ -446,7 +450,7 @@ function execRunScript({
       onFailure(new Error(errMsg))
     } else {
       Logs.add({
-        logText: `Process termination. (Nominal, exit code: ${code}.)`,
+        logText: `Process termination (expected).`,
         logSource: 'run()',
       })
     }
