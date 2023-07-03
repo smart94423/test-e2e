@@ -12,7 +12,7 @@ import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
-import { hasFail, logFail, logPass, logWarn } from './logTestStatus'
+import { hasFail, logBoot, logFail, logPass, logWarn } from './logTestStatus'
 
 async function runAll(filter: null | FindFilter) {
   await loadConfig()
@@ -70,11 +70,35 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
   assert(testFileJs.endsWith('.mjs'))
   const cleanBuild = await buildTs(testFile, testFileJs)
   setCurrentTest(testFile)
+  logBoot()
+  let execErr: unknown
   try {
     await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
+  } catch (err) {
+    assert(err)
+    execErr = err
   } finally {
     cleanBuild()
   }
+  if (execErr) {
+    logFail(`an error was thrown while executing the file ${testFile}`, true)
+    logError(execErr)
+    return false
+  }
+
+  // When user calls run runCommandThatTerminates()
+  {
+    const testInfo = getCurrentTest()
+    // Set when user calls run() or runCommandThatTerminates()
+    assert(testInfo.runInfo)
+    if (testInfo.runInfo.isRunCommandThatTerminates) {
+      assertUsage(!testInfo.tests, "Can't call test() when calling runCommandThatTerminates()")
+      assertUsage(!testInfo.startServer, "Can't call run() when calling runCommandThatTerminates()")
+      logPass()
+      return true
+    }
+  }
+
   const success = await runServerAndTests(browser, isSecondAttempt)
   setCurrentTest(null)
   return success
@@ -87,14 +111,6 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
   if (testInfo.skipped) {
     assertSkipUsage(testInfo)
     logWarn(testInfo.skipped.reason)
-    return true
-  }
-
-  // When user calls run runCommandThatTerminates()
-  if (!testInfo.startServer) {
-    assert(!testInfo.tests)
-    assert(!testInfo.startServer)
-    assert(!testInfo.terminateServer)
     return true
   }
 

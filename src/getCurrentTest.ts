@@ -33,6 +33,7 @@ type TestInfo = {
     doNotFailOnWarning: boolean
     testFunctionTimeout: number
     isFlaky: boolean
+    isRunCommandThatTerminates: boolean
   }
   hasStartedRunning?: boolean
   skipped?: { reason: string }
@@ -90,12 +91,14 @@ function setRunInfo({
   additionalTimeout = 0,
   doNotFailOnWarning = false,
   isFlaky = false,
+  isRunCommandThatTerminates = false,
 }: {
   cmd: string
   serverUrl?: string
   additionalTimeout?: number
   doNotFailOnWarning?: boolean
   isFlaky?: boolean
+  isRunCommandThatTerminates?: boolean
 }) {
   const testInfo = getCurrentTest()
   const testFunctionTimeout = TIMEOUT_TEST_FUNCTION + additionalTimeout
@@ -105,6 +108,7 @@ function setRunInfo({
     testFunctionTimeout,
     doNotFailOnWarning,
     isFlaky,
+    isRunCommandThatTerminates,
   }
 }
 

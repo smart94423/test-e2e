@@ -15,14 +15,13 @@ export { getServerUrl }
 export { runCommandThatTerminates } from './runCommandThatTerminates'
 
 import type { ConsoleMessage } from 'playwright-chromium'
-import { sleep, logProgress, cliConfig, isWindows, isLinux, isCI, isMac, isTTY, runCommandLongRunning } from './utils'
+import { sleep, logProgress, cliConfig, isWindows, isLinux, isCI, isMac, runCommandLongRunning } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import { editFileAssertReverted, editFileRevert } from './editFile'
 import { getCurrentTest, getCwd, setRunInfo } from './getCurrentTest'
 import { page } from './page'
-import { logBoot } from './logTestStatus'
 import { TIMEOUT_NPM_SCRIPT, TIMEOUT_PLAYWRIGHT, TIMEOUT_PROCESS_TERMINATION } from './TIMEOUTS'
 
 function skip(reason: string) {
@@ -176,11 +175,6 @@ async function startProcess({
   cmd: string
 }): Promise<RunProcess> {
   const cwd = getCwd()
-
-  if (isTTY) {
-    console.log()
-    logBoot()
-  }
 
   if (!serverIsReadyMessage) {
     serverIsReadyMessage = (log: string) => {

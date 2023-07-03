@@ -5,7 +5,7 @@ export { logBoot }
 export { hasFail }
 
 import { getCurrentTest } from './getCurrentTest'
-import { assert } from './utils'
+import { assert, isTTY } from './utils'
 import pc from 'picocolors'
 
 function logPass() {
@@ -47,8 +47,10 @@ function getStatusTags() {
 }
 
 function logBoot() {
+  if (!isTTY) return
   const { testFile } = getCurrentTest()
   const { BOOT } = getStatusTags()
+  console.log()
   console.log(`${BOOT} ${testFile}`)
 }
 
