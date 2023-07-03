@@ -1,8 +1,8 @@
 import { exec } from 'child_process'
 
-export { runCommand }
+export { runCommandShortLived }
 
-function runCommand(
+function runCommandShortLived(
   cmd: string,
   {
     swallowError = false,

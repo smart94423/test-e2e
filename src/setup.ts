@@ -3,7 +3,7 @@ import type { ChildProcessWithoutNullStreams } from 'child_process'
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
 import {
-  runCommand,
+  runCommandShortLived,
   sleep,
   logProgress,
   cliConfig,
@@ -239,14 +239,12 @@ async function startProcess(): Promise<RunProcess> {
     rejectServerStart(new Error(errMsg))
   }, timeoutTotal)
 
-  // Kill any process that listens to the server port
-  if (!process.env.CI && isLinux()) {
-    const port = getPort()
-    assert(/\d+/.test(port))
-    await runCommand(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
-  }
-
-  const { terminate, processHasExited } = runCommandKeepAlive({
+  const { cwd } = getRunInfo()
+  const { terminate, processHasExited } = runCommandLongRunning({
+    cmd,
+    cwd,
+    // Kill any process that listens to the server port
+    killPort: process.env.CI || !isLinux() ? false : getServerPort(),
     async onFailure(err) {
       assert(processHasExited())
       rejectServerStart(err as Error)
@@ -370,16 +368,23 @@ function stopProcess({
   return promise
 }
 
-function runCommandKeepAlive({
+function runCommandLongRunning({
+  cmd,
+  cwd,
   onStdout,
   onFailure,
   onExit,
+  killPort,
 }: {
+  cmd: string
+  cwd: string
+  killPort?: false | number
   onStdout?: (data: string) => void | Promise<void>
   onFailure: (err: Error) => void | Promise<void>
   onExit: () => boolean
 }) {
-  const { cwd, cmd } = getRunInfo()
+  if (killPort) kill(killPort)
+
   let [command, ...args] = cmd.split(' ')
   let detached = true
   if (isWindows()) {
@@ -407,7 +412,9 @@ function runCommandKeepAlive({
 
   proc.stdin.on('data', async (chunk: Buffer) => {
     const data = String(chunk)
-    await exitAndFail(new Error(`Command is \`${cmd}\` (${cwd}) is invoking \`stdin\`: ${data}.`))
+    await exitAndFail(
+      new Error(`Command \`${cmd}\` (${cwd}) is invoking stdin which is forbidden. The stdin data: ${data}`)
+    )
   })
   proc.stdout.on('data', (chunk: Buffer) => {
     const data = String(chunk)
@@ -433,7 +440,6 @@ function runCommandKeepAlive({
   const exitPromise = new Promise<void>((r) => (exitPromiseResolve = r))
   proc.on('exit', (code) => {
     procExited = true
-    assert(getRunInfo().cmd === cmd)
     const exitIsExpected = onExit()
     const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
     let errMsg: string | undefined
@@ -450,7 +456,7 @@ function runCommandKeepAlive({
       onFailure(new Error(errMsg))
     } else {
       Logs.add({
-        logText: `Process termination (expected).`,
+        logText: `Process termination (expected)`,
         logSource: 'run()',
       })
     }
@@ -506,6 +512,11 @@ function runCommandKeepAlive({
     resolve()
     return promise
   }
+}
+
+async function kill(port: number) {
+  assert(isLinux())
+  await runCommandShortLived(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
 }
 
 async function autoRetry(
@@ -589,9 +600,10 @@ function getServerUrl(): string {
   return serverUrl
 }
 
-function getPort(): string {
+function getServerPort(): number {
   const serverUrl = getServerUrl()
-  const port = serverUrl.split(':').slice(-1)[0]!.split('/')[0]
-  assert(/\d+/.test(port), { serverUrl })
+  const portStr = serverUrl.split(':').slice(-1)[0]!.split('/')[0]
+  assert(/\d+/.test(portStr), { serverUrl })
+  const port = parseInt(portStr, 10)
   return port
 }
