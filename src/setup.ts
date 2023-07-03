@@ -269,18 +269,12 @@ async function startProcess(): Promise<RunProcess> {
     err = err_
     assert(err)
   }
-  if (err) {
-    Logs.add({
-      logSource: 'run() failure',
-      logText: getErrMsg(err),
-    })
-  } else {
-    Logs.add({
-      logSource: 'run()',
-      logText: 'Server is ready.',
-    })
-  }
   done(!!err)
+  if (err) throw err
+  Logs.add({
+    logSource: 'run()',
+    logText: 'Server is ready.',
+  })
 
   await sleep(serverIsReadyDelay)
 
@@ -483,9 +477,9 @@ function runCommandLongRunning({
     {
       const exitIsExpected = isReady === true || isReadyPromiseTimedOut
       if (!isSuccessCode(code)) {
-        errMsg = `Unexpected error while running command \`${cmd}\` with exit code ${code}`
+        errMsg = `Unexpected termination of command \`${cmd}\` with exit code ${code}`
       } else if (!exitIsExpected) {
-        errMsg = 'Unexpected premature process termination'
+        errMsg = `Unexpected premature termination of command \`${cmd}\` (with success exit code ${code})`
       }
     }
 
@@ -638,14 +632,6 @@ function getServerPort(): number {
   assert(/\d+/.test(portStr), { serverUrl })
   const port = parseInt(portStr, 10)
   return port
-}
-
-function getErrMsg(err: unknown): string {
-  assert(isObject(err))
-  const errMsg = err.message
-  assert(errMsg)
-  assert(typeof errMsg === 'string')
-  return errMsg
 }
 
 function isSuccessCode(code: number | null): boolean {
