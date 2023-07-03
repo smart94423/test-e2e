@@ -2,6 +2,7 @@ export { runCommandShortLived }
 
 import { exec } from 'child_process'
 import { genPromise } from './genPromise'
+import { humanizeTime } from './humanizeTime'
 
 function runCommandShortLived(
   cmd: string,
@@ -14,7 +15,7 @@ function runCommandShortLived(
   const { promise, resolve, reject } = genPromise<string>()
 
   const t = setTimeout(() => {
-    console.error(`Command call \`${cmd}\` timeout [${timeout / 1000} seconds][${cwd}].`)
+    console.error(`Command call \`${cmd}\` (${cwd}) timed out after ${humanizeTime(timeout)}`)
     reject()
   }, timeout)
 

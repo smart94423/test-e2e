@@ -1,6 +1,6 @@
-export function genPromise<T>() {
+export function genPromise<T = undefined>() {
   let resolve!: (value: T) => void
-  let reject!: (value?: T) => void
+  let reject!: (value?: Error) => void
   const promise: Promise<T> = new Promise((resolve_, reject_) => {
     resolve = resolve_
     reject = reject_

@@ -1,4 +1,5 @@
 export * from './sleep'
+export * from './runCommand'
 export * from './runCommandShortLived'
 export * from './runCommandLongRunning'
 export * from './assert'

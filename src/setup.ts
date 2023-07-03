@@ -12,6 +12,7 @@ export { isWindows }
 export { isMac }
 export { sleep }
 export { getServerUrl }
+export { runCommandThatTerminates } from './runCommandThatTerminates'
 
 import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
