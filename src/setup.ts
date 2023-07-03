@@ -14,7 +14,6 @@ import {
   isMac,
   isCallable,
   isTTY,
-  isObject,
 } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'

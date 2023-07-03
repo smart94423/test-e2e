@@ -1,6 +1,7 @@
-import { exec } from 'child_process'
-
 export { runCommandShortLived }
+
+import { exec } from 'child_process'
+import { genPromise } from './genPromise'
 
 function runCommandShortLived(
   cmd: string,
@@ -10,11 +11,11 @@ function runCommandShortLived(
     cwd = process.cwd(),
   }: { swallowError?: boolean; timeout?: number; cwd?: string } = {}
 ): Promise<string> {
-  const { promise, resolvePromise, rejectPromise } = genPromise<string>()
+  const { promise, resolve, reject } = genPromise<string>()
 
   const t = setTimeout(() => {
     console.error(`Command call \`${cmd}\` timeout [${timeout / 1000} seconds][${cwd}].`)
-    rejectPromise()
+    reject()
   }, timeout)
 
   const options = { cwd }
@@ -22,7 +23,7 @@ function runCommandShortLived(
     clearTimeout(t)
     if (err || stderr) {
       if (swallowError) {
-        resolvePromise('SWALLOWED_ERROR')
+        resolve('SWALLOWED_ERROR')
       } else {
         if (stdout) {
           console.log(stdout)
@@ -36,19 +37,9 @@ function runCommandShortLived(
         throw new Error(`Command \`${cmd}\` failed [cwd: ${cwd}]`)
       }
     } else {
-      resolvePromise(stdout)
+      resolve(stdout)
     }
   })
 
   return promise
-}
-
-function genPromise<T>() {
-  let resolvePromise!: (value: T) => void
-  let rejectPromise!: (value?: T) => void
-  const promise: Promise<T> = new Promise((resolve, reject) => {
-    resolvePromise = resolve
-    rejectPromise = reject
-  })
-  return { promise, resolvePromise, rejectPromise }
 }
