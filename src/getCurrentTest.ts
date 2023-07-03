@@ -2,14 +2,17 @@ export { getCurrentTest }
 export { getCurrentTestOptional }
 export { setCurrentTest }
 
-export { getCwd }
 export { getRunInfo }
+export { setRunInfo }
+
+export { getCwd }
 
 export type { TestInfo }
 
 import type { Page } from 'playwright-chromium'
 import { assert } from './utils'
 import path from 'path'
+import { TIMEOUT_TEST_FUNCTION } from './TIMEOUTS'
 
 type TestInfo = {
   testFile: string
@@ -78,6 +81,31 @@ function getRunInfo() {
   const testInfo = getCurrentTest()
   assert(testInfo.runInfo)
   return testInfo.runInfo
+}
+
+const serverUrlDefault = 'http://localhost:3000'
+function setRunInfo({
+  cmd,
+  serverUrl = serverUrlDefault,
+  additionalTimeout = 0,
+  doNotFailOnWarning = false,
+  isFlaky = false,
+}: {
+  cmd: string
+  serverUrl?: string
+  additionalTimeout?: number
+  doNotFailOnWarning?: boolean
+  isFlaky?: boolean
+}) {
+  const testInfo = getCurrentTest()
+  const testFunctionTimeout = TIMEOUT_TEST_FUNCTION + additionalTimeout
+  testInfo.runInfo = {
+    cmd,
+    serverUrl,
+    testFunctionTimeout,
+    doNotFailOnWarning,
+    isFlaky,
+  }
 }
 
 function getCwd() {

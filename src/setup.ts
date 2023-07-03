@@ -20,12 +20,10 @@ import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import { editFileAssertReverted, editFileRevert } from './editFile'
-import { getCurrentTest, getCwd, getRunInfo } from './getCurrentTest'
+import { getCurrentTest, getCwd, setRunInfo } from './getCurrentTest'
 import { page } from './page'
 import { logBoot } from './logTestStatus'
-import { TIMEOUT_NPM_SCRIPT, TIMEOUT_PLAYWRIGHT, TIMEOUT_PROCESS_TERMINATION, TIMEOUT_TEST_FUNCTION } from './TIMEOUTS'
-
-const serverUrlDefault = 'http://localhost:3000'
+import { TIMEOUT_NPM_SCRIPT, TIMEOUT_PLAYWRIGHT, TIMEOUT_PROCESS_TERMINATION } from './TIMEOUTS'
 
 function skip(reason: string) {
   const testInfo = getCurrentTest()
@@ -41,9 +39,9 @@ function run(
     serverIsReadyDelay = 1000,
     inspect = cliConfig.inspect,
     cwd,
-    doNotFailOnWarning = false,
-    serverUrl = serverUrlDefault,
-    isFlaky = false,
+    doNotFailOnWarning,
+    serverUrl,
+    isFlaky,
   }: {
     //baseUrl?: string
     additionalTimeout?: number
@@ -61,19 +59,19 @@ function run(
 
   additionalTimeout += serverIsReadyDelay
 
-  const testInfo = getCurrentTest()
-  testInfo.runInfo = {
+  setRunInfo({
     cmd,
     serverUrl,
-    testFunctionTimeout: TIMEOUT_TEST_FUNCTION + additionalTimeout,
+    additionalTimeout,
     doNotFailOnWarning,
     isFlaky,
-  }
+  })
 
   if (inspect) {
     Logs.logEagerly = true
   }
 
+  const testInfo = getCurrentTest()
   let runProcess: RunProcess | null = null
   testInfo.startServer = async () => {
     runProcess = await startProcess({
