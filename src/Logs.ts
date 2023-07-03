@@ -14,6 +14,7 @@ import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
 import { logSection } from './logSection'
 import { isTolerateError } from './Logs/isTolerateError'
+import { expect } from './chai/expect'
 
 type LogSource =
   | 'stdout'
@@ -104,16 +105,15 @@ function add({
   }
 }
 
-function expectError(logFilter: (browserLog: LogEntry) => boolean) {
+function expectError(userFilter: (logEntry: LogEntry) => boolean) {
   const logFounds = logEntries.filter((logEntry) => {
-    if (logFilter(logEntry)) {
+    if (userFilter(logEntry)) {
       logEntry.isNotFailure = true
       return true
     }
     return false
   })
-  //expect(logFounds.length).not.toBe(0)
-  assert(logFounds.length > 0)
+  expect(logFounds.length).not.toBe(0)
 }
 
 function getTimestamp() {
