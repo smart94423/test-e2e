@@ -1,5 +1,5 @@
 export * from './sleep'
-export * from './runCommand'
+export * from './runCommandShortLived'
 export * from './assert'
 export * from './humanizeTime'
 export * from './isTTY'

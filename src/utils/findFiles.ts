@@ -4,7 +4,7 @@ export type { FindFilter }
 
 import glob from 'fast-glob'
 import path from 'path'
-import { runCommandShortLived } from './runCommand'
+import { runCommandShortLived } from './runCommandShortLived'
 
 type FindFilter = {
   terms: string[]
