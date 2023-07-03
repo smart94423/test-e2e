@@ -86,17 +86,23 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
     return false
   }
 
-  // When user calls run runCommandThatTerminates()
-  {
-    const testInfo = getCurrentTest()
+  // When user calls skip()
+  const testInfo = getCurrentTest()
+  if (testInfo.skipped) {
+    assertSkipUsage(testInfo)
+    logWarn(testInfo.skipped.reason)
+    return true
+  } else {
     // Set when user calls run() or runCommandThatTerminates()
     assert(testInfo.runInfo)
-    if (testInfo.runInfo.isRunCommandThatTerminates) {
-      assertUsage(!testInfo.tests, "Can't call test() when calling runCommandThatTerminates()")
-      assertUsage(!testInfo.startServer, "Can't call run() when calling runCommandThatTerminates()")
-      logPass()
-      return true
-    }
+  }
+
+  // When user calls run runCommandThatTerminates()
+  if (testInfo.runInfo.isRunCommandThatTerminates) {
+    assertUsage(!testInfo.tests, "Can't call test() when calling runCommandThatTerminates()")
+    assertUsage(!testInfo.startServer, "Can't call run() when calling runCommandThatTerminates()")
+    logPass()
+    return true
   }
 
   const success = await runServerAndTests(browser, isSecondAttempt)
@@ -106,14 +112,6 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
 
 async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
-
-  // Set when user calls skip()
-  if (testInfo.skipped) {
-    assertSkipUsage(testInfo)
-    logWarn(testInfo.skipped.reason)
-    return true
-  }
-
   // Set when user calls run()
   assert(testInfo.runInfo)
   assert(testInfo.startServer)
