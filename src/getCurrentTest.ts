@@ -19,15 +19,16 @@ type TestInfo = {
     testDesc: string
     testFn: Function
   }[]
+  testOptions?: {
+    doNotFailOnWarning: boolean
+    testFunctionTimeout: number
+    isFlaky: boolean
+  }
   runInfo?: {
     cmd: string
-    testFunctionTimeout: number
-    additionalTimeout: number
-    serverIsReadyMessage?: string | ((log: string) => boolean)
-    serverIsReadyDelay: number
-    inspect: boolean
-    doNotFailOnWarning: boolean
     serverUrl: string
+    doNotFailOnWarning: boolean
+    testFunctionTimeout: number
     isFlaky: boolean
   }
   hasStartedRunning?: boolean

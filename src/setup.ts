@@ -64,13 +64,9 @@ function run(
   const testInfo = getCurrentTest()
   testInfo.runInfo = {
     cmd,
-    additionalTimeout,
-    testFunctionTimeout: TIMEOUT_TEST_FUNCTION + additionalTimeout,
-    serverIsReadyMessage,
-    serverIsReadyDelay,
-    inspect,
-    doNotFailOnWarning,
     serverUrl,
+    testFunctionTimeout: TIMEOUT_TEST_FUNCTION + additionalTimeout,
+    doNotFailOnWarning,
     isFlaky,
   }
 
@@ -80,7 +76,12 @@ function run(
 
   let runProcess: RunProcess | null = null
   testInfo.startServer = async () => {
-    runProcess = await startProcess()
+    runProcess = await startProcess({
+      cmd,
+      additionalTimeout,
+      serverIsReadyMessage,
+      serverIsReadyDelay,
+    })
 
     page.on('console', onConsole)
     page.on('pageerror', onPageError)
@@ -165,11 +166,18 @@ function run(
 type RunProcess = {
   terminate: (force?: true) => Promise<void>
 }
-async function startProcess(): Promise<RunProcess> {
-  const runInfo = getRunInfo()
+async function startProcess({
+  serverIsReadyMessage,
+  serverIsReadyDelay,
+  additionalTimeout,
+  cmd,
+}: {
+  serverIsReadyMessage?: string | ((log: string) => boolean)
+  serverIsReadyDelay: number
+  additionalTimeout: number
+  cmd: string
+}): Promise<RunProcess> {
   const cwd = getCwd()
-  const { cmd, additionalTimeout, serverIsReadyDelay } = runInfo
-  let { serverIsReadyMessage } = runInfo
 
   if (isTTY) {
     console.log()
