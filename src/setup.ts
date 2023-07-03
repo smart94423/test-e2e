@@ -98,7 +98,7 @@ function run(
 
   let runProcess: RunProcess | null = null
   testInfo.startServer = async () => {
-    runProcess = await start()
+    runProcess = await startProcess()
 
     page.on('console', onConsole)
     page.on('pageerror', onPageError)
@@ -131,7 +131,7 @@ function run(
     page.off('console', onConsole)
     page.off('pageerror', onPageError)
 
-    // `runProcess` is `undefined` if `start()` failed.
+    // runProcess is undefined if startProcess() failed
     if (runProcess) {
       await runProcess.terminate()
     }
@@ -189,7 +189,7 @@ function getRunInfo() {
 type RunProcess = {
   terminate: (force?: true) => Promise<void>
 }
-async function start(): Promise<RunProcess> {
+async function startProcess(): Promise<RunProcess> {
   const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
   if (isTTY) {
     console.log()
@@ -246,7 +246,7 @@ async function start(): Promise<RunProcess> {
     await runCommand(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
   }
 
-  const { terminate, processHasExited } = execRunScript({
+  const { terminate, processHasExited } = runCommandKeepAlive({
     async onFailure(err) {
       assert(processHasExited())
       rejectServerStart(err as Error)
@@ -370,7 +370,7 @@ function stopProcess({
   return promise
 }
 
-function execRunScript({
+function runCommandKeepAlive({
   onStdout,
   onFailure,
   onExit,
