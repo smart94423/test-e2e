@@ -145,9 +145,12 @@ async function runTests(testInfo: TestInfo, isFinalAttempt: boolean): Promise<bo
   // Set when user calls `run()`
   assert(testInfo.runInfo)
   assert(testInfo.afterEach)
-  // Set when user calls `test()`
-  assert(testInfo.tests)
-  for (const { testDesc, testFn } of testInfo.tests) {
+  const tests =
+    // Set when user calls test()
+    testInfo.tests ??
+    // When user hasn't any test() call
+    []
+  for (const { testDesc, testFn } of tests) {
     Logs.add({
       logSource: 'test()',
       logText: testDesc,
