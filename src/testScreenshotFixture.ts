@@ -7,7 +7,7 @@ import { PNG, type PNGWithMetadata } from 'pngjs'
 import fs from 'fs'
 import path from 'path'
 import { assert, sleep } from './utils'
-import { getCurrentTest } from './getCurrentTest'
+import { getCurrentTest, getCwd } from './getCurrentTest'
 import { expect } from './chai/expect'
 
 async function testScreenshotFixture({
@@ -86,6 +86,6 @@ function getPngPaths() {
 function getTestFileDir(): string {
   const { testFile, runInfo } = getCurrentTest()
   const cwd = path.dirname(testFile)
-  assert(runInfo!.cwd === cwd)
+  assert(cwd === getCwd())
   return cwd
 }

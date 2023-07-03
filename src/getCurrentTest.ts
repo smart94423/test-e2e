@@ -1,6 +1,10 @@
 export { getCurrentTest }
 export { getCurrentTestOptional }
 export { setCurrentTest }
+
+export { getCwd }
+export { getRunInfo }
+
 export type { TestInfo }
 
 import type { Page } from 'playwright-chromium'
@@ -17,7 +21,6 @@ type TestInfo = {
   }[]
   runInfo?: {
     cmd: string
-    cwd: string
     testFunctionTimeout: number
     additionalTimeout: number
     serverIsReadyMessage?: string | ((log: string) => boolean)
@@ -68,4 +71,16 @@ function removeRootDir(filePath: string) {
   const rootDir = process.cwd()
   assert(filePath.startsWith(rootDir))
   return filePath.slice(rootDir.length)
+}
+
+function getRunInfo() {
+  const testInfo = getCurrentTest()
+  assert(testInfo.runInfo)
+  return testInfo.runInfo
+}
+
+function getCwd() {
+  const { testFile } = getCurrentTest()
+  const cwd = path.dirname(testFile)
+  return cwd
 }

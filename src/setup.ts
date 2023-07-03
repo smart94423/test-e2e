@@ -14,14 +14,13 @@ export { sleep }
 export { getServerUrl }
 export { runCommandThatTerminates } from './runCommandThatTerminates'
 
-import { dirname } from 'path'
 import type { ConsoleMessage } from 'playwright-chromium'
 import { sleep, logProgress, cliConfig, isWindows, isLinux, isCI, isMac, isTTY, runCommandLongRunning } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import { editFileAssertReverted, editFileRevert } from './editFile'
-import { getCurrentTest } from './getCurrentTest'
+import { getCurrentTest, getCwd, getRunInfo } from './getCurrentTest'
 import { page } from './page'
 import { logBoot } from './logTestStatus'
 import { TIMEOUT_NPM_SCRIPT, TIMEOUT_PLAYWRIGHT, TIMEOUT_PROCESS_TERMINATION, TIMEOUT_TEST_FUNCTION } from './TIMEOUTS'
@@ -51,18 +50,20 @@ function run(
     serverIsReadyMessage?: string | ((log: string) => boolean)
     serverIsReadyDelay?: number
     inspect?: boolean
+    /** deprecated */
     cwd?: string
     doNotFailOnWarning?: boolean
     serverUrl?: string
     isFlaky?: boolean
   } = {}
 ) {
+  assert(cwd === undefined)
+
   additionalTimeout += serverIsReadyDelay
 
   const testInfo = getCurrentTest()
   testInfo.runInfo = {
     cmd,
-    cwd: cwd || getCwd(),
     additionalTimeout,
     testFunctionTimeout: TIMEOUT_TEST_FUNCTION + additionalTimeout,
     serverIsReadyMessage,
@@ -161,18 +162,13 @@ function run(
   }
 }
 
-function getRunInfo() {
-  const testInfo = getCurrentTest()
-  assert(testInfo.runInfo)
-  return testInfo.runInfo
-}
-
 type RunProcess = {
   terminate: (force?: true) => Promise<void>
 }
 async function startProcess(): Promise<RunProcess> {
   const runInfo = getRunInfo()
-  const { cmd, cwd, additionalTimeout, serverIsReadyDelay } = runInfo
+  const cwd = getCwd()
+  const { cmd, additionalTimeout, serverIsReadyDelay } = runInfo
   let { serverIsReadyMessage } = runInfo
 
   if (isTTY) {
@@ -307,12 +303,6 @@ function isMinNodeVersion(minNodeVersion: 14) {
   const major = parseInt(version[1] + version[2], 10)
   assert(12 <= major && major <= 50)
   return major >= minNodeVersion
-}
-
-function getCwd() {
-  const { testFile } = getCurrentTest()
-  const cwd = dirname(testFile)
-  return cwd
 }
 
 function getServerUrl(): string {
