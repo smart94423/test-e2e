@@ -3,7 +3,7 @@ export { runAll }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, humanizeTime, isCI, isTTY, isWindows, logProgress } from './utils'
+import { assert, assertUsage, humanizeTime, isCI, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import { isParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
@@ -83,14 +83,22 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
 async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
 
-  // Set when user calls `skip()`
+  // Set when user calls skip()
   if (testInfo.skipped) {
     assertSkipUsage(testInfo)
     logWarn(testInfo.skipped.reason)
     return true
   }
 
-  // Set when user calls `run()`
+  // When user calls run runCommandThatTerminates()
+  if (!testInfo.startServer) {
+    assert(!testInfo.tests)
+    assert(!testInfo.startServer)
+    assert(!testInfo.terminateServer)
+    return true
+  }
+
+  // Set when user calls run()
   assert(testInfo.runInfo)
   assert(testInfo.startServer)
   assert(testInfo.terminateServer)

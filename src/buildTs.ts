@@ -15,7 +15,7 @@ async function buildTs(entry: string, outfile: string): Promise<() => void> {
     outfile,
     logLevel: 'warning',
     format: 'esm',
-    target: 'es2020',
+    target: 'es2022',
     bundle: true,
     packages: 'external',
     minify: false,
