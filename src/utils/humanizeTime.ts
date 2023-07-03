@@ -3,10 +3,10 @@ export { humanizeTime }
 function humanizeTime(milliseconds: number) {
   const seconds = milliseconds / 1000
   if (seconds < 120) {
-    return `${round(seconds)} seconds`
+    return `${round(seconds)} seconds` as const
   }
   const minutes = seconds / 60
-  return `${round(minutes)} minutes`
+  return `${round(minutes)} minutes` as const
 }
 
 function round(n: number): string {

@@ -14,6 +14,7 @@ import {
   isMac,
   isCallable,
   isTTY,
+  isObject,
 } from './utils'
 import fetch_ from 'node-fetch'
 import { assert } from './utils'
@@ -190,92 +191,100 @@ type RunProcess = {
   terminate: (force?: true) => Promise<void>
 }
 async function startProcess(): Promise<RunProcess> {
-  const { cmd, additionalTimeout, serverIsReadyMessage, serverIsReadyDelay } = getRunInfo()
+  const runInfo = getRunInfo()
+  const { cmd, cwd, additionalTimeout, serverIsReadyDelay } = runInfo
+  let { serverIsReadyMessage } = runInfo
+
   if (isTTY) {
     console.log()
     logBoot()
   }
-  const done = logProgress(`[run] ${cmd}`)
 
-  let hasSuccessfullyStarted = false
-  let resolveServerStart: () => void
-  let rejectServerStart: (err: Error) => void
-  const promise = new Promise<RunProcess>((_resolve, _reject) => {
-    resolveServerStart = () => {
-      assert(!processHasExited())
-      assert(getRunInfo().cmd === cmd)
-      Logs.add({
-        logSource: 'run()',
-        logText: 'Server is ready.',
-      })
-      hasSuccessfullyStarted = true
-      clearTimeout(serverStartTimeout)
-      const runProcess = { terminate }
-      _resolve(runProcess)
-    }
-    rejectServerStart = async (err: Error) => {
-      assert(processHasExited())
-      assert(getRunInfo().cmd === cmd)
-      done(true)
-      clearTimeout(serverStartTimeout)
-      _reject(err)
-    }
-  })
-
-  const timeoutTotal = TIMEOUT_NPM_SCRIPT + additionalTimeout
-  let hasTimedout = false
-  const serverStartTimeout = setTimeout(async () => {
-    hasTimedout = true
-    let errMsg = ''
-    errMsg += `Server still didn't start after ${humanizeTime(timeoutTotal)} of running the npm script \`${cmd}\`.`
-    if (serverIsReadyMessage) {
-      errMsg += ` (The stdout of the npm script did not include: "${serverIsReadyMessage}".)`
-    }
-    Logs.add({
-      logSource: 'run() failure',
-      logText: errMsg,
-    })
-    await terminate(true)
-    rejectServerStart(new Error(errMsg))
-  }, timeoutTotal)
-
-  const { cwd } = getRunInfo()
-  const { terminate, processHasExited } = runCommandLongRunning({
-    cmd,
-    cwd,
-    // Kill any process that listens to the server port
-    killPort: process.env.CI || !isLinux() ? false : getServerPort(),
-    async onFailure(err) {
-      assert(processHasExited())
-      rejectServerStart(err as Error)
-    },
-    onExit() {
-      assert(processHasExited())
-      const exitIsExpected = hasSuccessfullyStarted === true || hasTimedout
-      return exitIsExpected
-    },
-    async onStdout(data: string) {
-      const log = stripAnsi(data)
-      const isServerReady =
-        // Custom
-        (typeof serverIsReadyMessage === 'string' && log.includes(serverIsReadyMessage)) ||
-        (isCallable(serverIsReadyMessage) && serverIsReadyMessage(log)) ||
+  if (!serverIsReadyMessage) {
+    serverIsReadyMessage = (log: string) => {
+      const serverIsReady =
         // Express.js server
         log.includes('Server running at') ||
         // npm package `serve`
         log.includes('Accepting connections at') ||
         // Vite
         (log.includes('Local:') && log.includes('http://localhost:3000/'))
-      if (isServerReady) {
-        assert(serverIsReadyDelay)
-        await sleep(serverIsReadyDelay)
-        resolveServerStart()
-        done()
-      }
-    },
+      return serverIsReady
+    }
+  }
+
+  Logs.add({
+    logSource: 'run()',
+    logText: `Spawn command \`${cmd}\``,
   })
 
-  return promise
+  const done = logProgress(`[run] ${cmd}`)
+
+  const { terminate, isReadyPromise } = runCommandLongRunning({
+    cmd,
+    cwd,
+    isReadyLog: serverIsReadyMessage,
+    isReadyTimeout: TIMEOUT_NPM_SCRIPT + additionalTimeout,
+    killPort: process.env.CI || !isLinux() ? false : getServerPort(),
+    onStderr(data: string, { loggedAfterExit }) {
+      Logs.add({
+        logSource: 'stderr',
+        logText: data,
+        loggedAfterExit,
+      })
+    },
+    onStdout(data: string, { loggedAfterExit }) {
+      Logs.add({
+        logSource: 'stdout',
+        logText: data,
+        loggedAfterExit,
+      })
+    },
+    onExit(errMsg) {
+      if (!errMsg) {
+        Logs.add({
+          logSource: 'run()',
+          logText: `Process termination (expected)`,
+        })
+      } else {
+        Logs.add({
+          logSource: 'run() failure',
+          logText: errMsg,
+        })
+      }
+    },
+    onTerminationError(errMsg) {
+      Logs.add({
+        logSource: 'run() failure',
+        logText: errMsg,
+      })
+    },
+    terminationTimeout: TIMEOUT_PROCESS_TERMINATION,
+  })
+
+  let err: unknown
+  try {
+    await isReadyPromise
+  } catch (err_) {
+    err = err_
+    assert(err)
+  }
+  if (err) {
+    Logs.add({
+      logSource: 'run() failure',
+      logText: getErrMsg(err),
+    })
+  } else {
+    Logs.add({
+      logSource: 'run()',
+      logText: 'Server is ready.',
+    })
+  }
+  done(!!err)
+
+  await sleep(serverIsReadyDelay)
+
+  return { terminate }
 }
 
 function stopProcess({
@@ -283,27 +292,24 @@ function stopProcess({
   cwd,
   cmd,
   force,
+  onTerminationError,
 }: {
   proc: ChildProcessWithoutNullStreams
   cwd: string
   cmd: string
   force?: true
+  onTerminationError: (errMsg: string) => void
 }) {
-  const prefix = `[Run Stop][${cwd}][${cmd}]`
-
   let resolve: () => void
-  let reject: (err: Error) => void
   const promise = new Promise<void>((_resolve, _reject) => {
     resolve = _resolve
-    reject = _reject
   })
 
   const onProcessClose = (code: number) => {
-    if (code === 0 || code === null || (code === 1 && isWindows())) {
-      resolve()
-    } else {
-      reject(new Error(`${prefix} Terminated with non-0 error code ${code}`))
+    if (!isSuccessCode(code)) {
+      onTerminationError(`Command \`${cmd}\` (${cwd}) terminated with non-0 error code ${code}`)
     }
+    resolve()
   }
   proc.on('close', onProcessClose)
   proc.on('exit', onProcessClose)
@@ -371,19 +377,59 @@ function stopProcess({
 function runCommandLongRunning({
   cmd,
   cwd,
-  onStdout,
-  onFailure,
-  onExit,
   killPort,
+  isReadyLog,
+  isReadyTimeout,
+  onStdout,
+  onStderr,
+  onExit,
+  onTerminationError,
+  terminationTimeout,
 }: {
   cmd: string
   cwd: string
-  killPort?: false | number
-  onStdout?: (data: string) => void | Promise<void>
-  onFailure: (err: Error) => void | Promise<void>
-  onExit: () => boolean
-}) {
-  if (killPort) kill(killPort)
+  killPort: false | number
+  isReadyLog: string | ((log: string) => boolean)
+  isReadyTimeout: number
+  onStdout: (log: string, info: { loggedAfterExit: boolean }) => void
+  onStderr: (log: string, info: { loggedAfterExit: boolean }) => void
+  onExit: (errMsg?: string) => void
+  onTerminationError: (errMsg: string) => void
+  terminationTimeout: number
+}): { terminate: (force?: true) => Promise<void>; isReadyPromise: Promise<void> } {
+  if (killPort) killByPort(killPort)
+
+  let onError: (err: Error, alreadyTerminated?: true) => void
+  let onReady: () => void
+  let isReady = false
+  const isReadyPromise = new Promise<void>((resolve_, reject_) => {
+    onReady = () => {
+      clearTimeout(isReadyPromiseTimeout)
+      assert(!procExited)
+      isReady = true
+      resolve_()
+    }
+    onError = async (err, alreadyTerminated) => {
+      clearTimeout(isReadyPromiseTimeout)
+      // We reject before terminating the process in order to preserve log order. (This order is fine because the test runner doesn't exit upon test failure.)
+      reject_(err)
+      if (!alreadyTerminated) {
+        assert(!procExited)
+        await terminate(true)
+      }
+      assert(procExited)
+    }
+  })
+
+  let isReadyPromiseTimedOut = false
+  const isReadyPromiseTimeout = setTimeout(async () => {
+    isReadyPromiseTimedOut = true
+    let errMsg = `Command \`${cmd}\` not ready after ${humanizeTime(isReadyTimeout)}.`
+    if (typeof isReadyLog === 'string') {
+      errMsg += ` The stdout of the command did not (yet?) include "${isReadyLog}".`
+    }
+    onError(new Error(errMsg))
+  }, isReadyTimeout)
 
   let [command, ...args] = cmd.split(' ')
   let detached = true
@@ -393,128 +439,103 @@ function runCommandLongRunning({
       command = command + '.cmd'
     }
   }
-  Logs.add({
-    logSource: 'run()',
-    logText: `Spawn command \`${cmd}\``,
-  })
   const proc = spawn(command, args, { cwd, detached })
 
   let procExited = false
 
-  const exitAndFail = async (err: Error) => {
-    Logs.add({
-      logText: err.message,
-      logSource: 'run() failure',
-    })
-    await terminate(true)
-    onFailure(err)
-  }
-
   proc.stdin.on('data', async (chunk: Buffer) => {
     const data = String(chunk)
-    await exitAndFail(
-      new Error(`Command \`${cmd}\` (${cwd}) is invoking stdin which is forbidden. The stdin data: ${data}`)
-    )
+    onError(new Error(`Command \`${cmd}\` (${cwd}) is invoking stdin which is forbidden. The stdin data: ${data}`))
   })
   proc.stdout.on('data', (chunk: Buffer) => {
-    const data = String(chunk)
-    Logs.add({
-      logSource: 'stdout',
-      logText: data,
-      loggedAfterExit: procExited,
-    })
-    onStdout?.(data)
+    const log = String(chunk)
+    onStdout(log, { loggedAfterExit: procExited })
+    {
+      const logCleaned = stripAnsi(log)
+      let isMatch = false
+      if (typeof isReadyLog === 'string') {
+        isMatch = logCleaned.includes(isReadyLog)
+      } else if (isCallable(isReadyLog)) {
+        isMatch = isReadyLog(logCleaned)
+      } else {
+        assert(false)
+      }
+      if (isMatch) onReady()
+    }
   })
   proc.stderr.on('data', async (chunk: Buffer) => {
-    const data = String(chunk)
-    Logs.add({
-      logSource: 'stderr',
-      logText: data,
-      loggedAfterExit: procExited,
-    })
-    if (data.includes('EADDRINUSE')) {
-      await exitAndFail(new Error('Port conflict? Port already in use EADDRINUSE.'))
+    const log = String(chunk)
+    onStderr(log, { loggedAfterExit: procExited })
+    if (log.includes('EADDRINUSE')) {
+      onError(new Error('Port conflict? Port already in use EADDRINUSE.'))
     }
   })
   let exitPromiseResolve!: () => void
   const exitPromise = new Promise<void>((r) => (exitPromiseResolve = r))
   proc.on('exit', (code) => {
     procExited = true
-    const exitIsExpected = onExit()
-    const isSuccessCode = [0, null].includes(code) || (isWindows() && code === 1)
+
     let errMsg: string | undefined
-    if (!isSuccessCode) {
-      errMsg = `Unexpected error while running command \`${cmd}\` with exit code ${code}`
-    } else if (!exitIsExpected) {
-      errMsg = 'Unexpected premature process termination'
+    {
+      const exitIsExpected = isReady === true || isReadyPromiseTimedOut
+      if (!isSuccessCode(code)) {
+        errMsg = `Unexpected error while running command \`${cmd}\` with exit code ${code}`
+      } else if (!exitIsExpected) {
+        errMsg = 'Unexpected premature process termination'
+      }
     }
+
+    // We add errMsg to onExit() because isReadyPromise may have already returned
+    onExit(errMsg)
+
     if (errMsg) {
-      Logs.add({
-        logText: errMsg,
-        logSource: 'run() failure',
-      })
-      onFailure(new Error(errMsg))
+      onError(new Error(errMsg), true)
     } else {
-      Logs.add({
-        logText: `Process termination (expected)`,
-        logSource: 'run()',
-      })
+      assert(isReady)
     }
+
     exitPromiseResolve()
   })
 
-  return { terminate, processHasExited }
-
-  function processHasExited(): boolean {
-    return procExited
-  }
+  return { terminate, isReadyPromise }
 
   async function terminate(force?: true) {
     let resolve!: () => void
     let reject!: (err: Error) => void
-    const promise = new Promise<void>((_resolve, _reject) => {
-      resolve = () => {
-        _resolve()
+    const promise = new Promise<void>((resolve_, reject_) => {
+      resolve = async () => {
+        resolve_()
       }
       reject = () => {
-        _reject()
+        reject_()
       }
     })
 
-    const timeout = setTimeout(() => {
+    const terminateTimeout = setTimeout(() => {
       const errMsg = 'Process termination timeout. Cmd: ' + cmd
-      Logs.add({
-        logSource: 'run() failure',
-        logText: errMsg,
-      })
-      /* Don't interrupt the test runner, as the test runner may recover thanks to the process-killing-by-port
+      onTerminationError(errMsg)
+      /* Don't interrupt the test runner, as the test runner may recover thanks to killByPort() (EDIT: this is actually inaccurate since killByPort() isn't called in CI. Maybe we should reject?)
       reject(new Error(errMsg))
       */
       resolve()
-    }, TIMEOUT_PROCESS_TERMINATION)
+    }, terminationTimeout)
 
     assert(proc)
-    try {
-      await stopProcess({
-        proc,
-        cwd,
-        cmd,
-        force,
-      })
-    } catch (err) {
-      Logs.add({
-        logSource: 'run() failure',
-        logText: String(err),
-      })
-    }
-    clearTimeout(timeout)
+    await stopProcess({
+      proc,
+      cwd,
+      cmd,
+      force,
+      onTerminationError,
+    })
+    clearTimeout(terminateTimeout)
     await exitPromise
     resolve()
     return promise
   }
 }
 
-async function kill(port: number) {
+async function killByPort(port: number) {
   assert(isLinux())
   await runCommandShortLived(`fuser -k ${port}/tcp`, { swallowError: true, timeout: 10 * 1000 })
 }
@@ -606,4 +627,16 @@ function getServerPort(): number {
   assert(/\d+/.test(portStr), { serverUrl })
   const port = parseInt(portStr, 10)
   return port
+}
+
+function getErrMsg(err: unknown): string {
+  assert(isObject(err))
+  const errMsg = err.message
+  assert(errMsg)
+  assert(typeof errMsg === 'string')
+  return errMsg
+}
+
+function isSuccessCode(code: number | null): boolean {
+  return code === 0 || code === null || (code === 1 && isWindows())
 }
