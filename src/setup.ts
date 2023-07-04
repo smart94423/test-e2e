@@ -2,7 +2,7 @@ export { partRegex } from '@brillout/part-regex'
 export { autoRetry } from './autoRetry'
 export { fetchHtml }
 export { fetch }
-export { expectError } from './Logs'
+export { expectLog } from './Logs'
 export { run }
 export { skip }
 export { isMinNodeVersion }

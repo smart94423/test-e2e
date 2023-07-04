@@ -1,4 +1,4 @@
-export { expectError }
+export { expectLog }
 export const Logs = {
   add,
   flushLogs,
@@ -14,7 +14,7 @@ import pc from 'picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
 import { logSection } from './logSection'
 import { isTolerateError } from './Logs/isTolerateError'
-import { expect } from './chai/expect'
+import stripAnsi from 'strip-ansi'
 
 type LogSource =
   | 'stdout'
@@ -105,15 +105,22 @@ function add({
   }
 }
 
-function expectError(userFilter: (logEntry: LogEntry) => boolean) {
-  const logFounds = logEntries.filter((logEntry) => {
-    if (userFilter(logEntry)) {
+function expectLog(logText: string, logFilter?: (logEntry: LogEntry) => boolean) {
+  const logsFound = logEntries.filter((logEntry) => {
+    if (stripAnsi(logEntry.logText).includes(logText)) {
       logEntry.isNotFailure = true
       return true
     }
     return false
   })
-  expect(logFounds.length).not.toBe(0)
+  const logsFoundWithFilter = logsFound.filter((logEntry) => logFilter?.(logEntry))
+  if (logsFoundWithFilter.length === 0) {
+    if (logsFound.length === 0) {
+      throw new Error(`The following log was expected but wasn't logged: "${logText}"`)
+    } else {
+      throw new Error(`The following log was logged as expected, but it didn't match the logFilter() you provided`)
+    }
+  }
 }
 
 function getTimestamp() {
