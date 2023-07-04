@@ -145,7 +145,7 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
     const failOnWarning = true
     if (
       Logs.hasFailLogs(failOnWarning) &&
-      // See comments about taskkill in src/setup.ts
+      // See comments about taskkill in src/utils/runCommandLongRunning.ts
       !isWindows()
     ) {
       logFailure(null, `${getErrorType(failOnWarning)} occurred during server termination`, isFinalAttempt)

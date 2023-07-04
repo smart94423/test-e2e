@@ -6,6 +6,7 @@ export { getRunInfo }
 export { setRunInfo }
 
 export { getCwd }
+export { getServerUrl }
 
 export type { TestInfo }
 
@@ -116,4 +117,10 @@ function getCwd() {
   const { testFile } = getCurrentTest()
   const cwd = path.dirname(testFile)
   return cwd
+}
+
+function getServerUrl(): string {
+  const testInfo = getCurrentTest()
+  const serverUrl = testInfo.runInfo?.serverUrl!
+  return serverUrl
 }

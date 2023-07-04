@@ -1,33 +1,13 @@
-export { partRegex } from '@brillout/part-regex'
-export { autoRetry } from './autoRetry'
-export { fetchHtml }
-export { fetch }
-export { expectLog } from './Logs'
 export { run }
-export { skip }
-export { isMinNodeVersion }
-export { isCI }
-export { isLinux }
-export { isWindows }
-export { isMac }
-export { sleep }
-export { getServerUrl }
-export { runCommandThatTerminates } from './runCommandThatTerminates'
 
 import type { ConsoleMessage } from 'playwright-chromium'
-import { sleep, logProgress, cliConfig, isWindows, isLinux, isCI, isMac, runCommandLongRunning } from './utils'
-import fetch_ from 'node-fetch'
+import { sleep, logProgress, cliConfig, isLinux, runCommandLongRunning } from './utils'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import { editFileAssertReverted, editFileRevert } from './editFile'
-import { getCurrentTest, getCwd, setRunInfo } from './getCurrentTest'
+import { getCurrentTest, getCwd, getServerUrl, setRunInfo } from './getCurrentTest'
 import { page } from './page'
 import { TIMEOUT_NPM_SCRIPT, TIMEOUT_PLAYWRIGHT, TIMEOUT_PROCESS_TERMINATION } from './TIMEOUTS'
-
-function skip(reason: string) {
-  const testInfo = getCurrentTest()
-  testInfo.skipped = { reason }
-}
 
 function run(
   cmd: string,
@@ -255,60 +235,6 @@ async function startProcess({
   await sleep(serverIsReadyDelay)
 
   return { terminate }
-}
-
-async function fetchHtml(pathname: string) {
-  const response = await fetch(getServerUrl() + pathname)
-  const html = await response.text()
-  return html
-}
-async function fetch(...args: Parameters<typeof fetch_>) {
-  try {
-    return await fetch_(...args)
-  } catch (err) {
-    Logs.add({
-      logSource: 'Connection Error',
-      logText: `Couldn't connect to \`${args[0]}\`. Args: \`${JSON.stringify(args.slice(1))}\`. Err: \`${
-        // @ts-ignore
-        err.message
-      }\``,
-    })
-    throw new Error("Couldn't connect to server. See `Connection Error` log for more details.")
-  }
-}
-
-/*
-async function bailOnTimeout(asyncFunc: () => Promise<void>, { timeout }: { timeout: number }) {
-  let resolve: () => void
-  let reject: (err: Error) => void
-  const promise = new Promise<void>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
-
-  const t = setTimeout(() => {
-    reject(new Error(`Function timeout.`))
-  }, timeout)
-  await asyncFunc()
-  clearTimeout(t)
-  resolve()
-
-  return promise
-}
-*/
-
-function isMinNodeVersion(minNodeVersion: 14) {
-  const { version } = process
-  assert(version.startsWith('v'))
-  const major = parseInt(version[1] + version[2], 10)
-  assert(12 <= major && major <= 50)
-  return major >= minNodeVersion
-}
-
-function getServerUrl(): string {
-  const testInfo = getCurrentTest()
-  const serverUrl = testInfo.runInfo?.serverUrl!
-  return serverUrl
 }
 
 function getServerPort(): number {
