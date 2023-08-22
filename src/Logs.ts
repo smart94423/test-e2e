@@ -154,7 +154,7 @@ function printLog(logEntry: LogEntry) {
 
   let testInfoLabels = ''
   if (testInfo) {
-    assert(testInfo.runInfo)
+    assert(testInfo.runInfo, testInfo)
     testInfoLabels = `[${testInfo.testName}][${testInfo.runInfo.cmd}]`
   }
 
