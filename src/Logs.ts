@@ -5,7 +5,7 @@ export const Logs = {
   logErrorsAndWarnings,
   clearLogs,
   hasFailLogs,
-  logEagerly: false,
+  logEagerly: 'all' as 'all' | 'logs',
 }
 export type { LogSource }
 
@@ -101,7 +101,10 @@ function add({
   }
   logEntries.push(logEntry)
   if (Logs.logEagerly) {
-    printLog(logEntry)
+    let shouldLog = false
+    if (Logs.logEagerly === 'all') shouldLog = true
+    if (Logs.logEagerly === 'logs' && logSource !== 'Playwright') shouldLog = true
+    if (shouldLog) printLog(logEntry)
   }
 }
 

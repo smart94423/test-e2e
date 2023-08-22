@@ -2,6 +2,12 @@ export { cliConfig }
 
 const options = process.argv.filter((w) => w.startsWith('--'))
 
+const VERBOSE = '--verbose'
+let verbose = false
+if (includes(options, VERBOSE)) {
+  verbose = true
+}
+
 const INSPECT = '--inspect'
 let inspect = false
 if (includes(options, INSPECT)) {
@@ -19,12 +25,13 @@ if (options.length > 0) {
     [
       // prettier-ignore
       `unknown options: ${options.join(' ')}`,
-      `known options: ${[INSPECT, DEBUG_ESBUILD].join(' ')}`,
+      `known options: ${[VERBOSE, INSPECT, DEBUG_ESBUILD].join(' ')}`,
     ].join('\n')
   )
 }
 
 const cliConfig = {
+  verbose,
   // To inspect a specific test: `$ touch examples/some-example/INSPECT`
   inspect: inspect || !!process.env.TEST_INSPECT,
   debugEsbuild,

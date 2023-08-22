@@ -47,7 +47,9 @@ function run(
   })
 
   if (inspect) {
-    Logs.logEagerly = true
+    Logs.logEagerly = 'all'
+  } else if (cliConfig.verbose) {
+    Logs.logEagerly = 'logs'
   }
 
   const testInfo = getCurrentTest()
