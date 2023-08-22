@@ -2,10 +2,13 @@ export { isTolerateError }
 
 import { getConfig } from '../getConfig'
 import type { LogSource } from '../Logs'
+import stripAnsi from 'strip-ansi'
 
 type LogData = { logSource: LogSource; logText: string }
 
 function isTolerateError({ logSource, logText }: LogData): boolean {
+  logText = stripAnsi(logText)
+
   if (tolerateError({ logSource, logText })) {
     return true
   }
