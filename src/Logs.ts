@@ -5,7 +5,7 @@ export const Logs = {
   logErrorsAndWarnings,
   clearLogs,
   hasFailLogs,
-  logEagerly: 'all' as 'all' | 'logs',
+  logEagerly: false as false | 'all' | 'logs',
 }
 export type { LogSource }
 
