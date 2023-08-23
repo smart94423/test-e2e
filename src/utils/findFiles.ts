@@ -43,14 +43,22 @@ function applyFilter(filePathRelative: string, findFilter: null | FindFilter) {
   }
   const { terms, exclude } = findFilter
   for (const term of terms) {
-    if (!filePathRelative.includes(term) && !exclude) {
+    if (!matches(filePathRelative, term) && !exclude) {
       return false
     }
-    if (filePathRelative.includes(term) && exclude) {
+    if (matches(filePathRelative, term) && exclude) {
       return false
     }
   }
   return true
+}
+function matches(str: string, chunk: string) {
+  str = normalize(str)
+  chunk = normalize(chunk)
+  return str.includes(chunk)
+}
+function normalize(p: string) {
+  return path.normalize(p)
 }
 
 function findFilesParseCliArgs(): null | FindFilter {
