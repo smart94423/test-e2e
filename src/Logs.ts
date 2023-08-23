@@ -110,13 +110,13 @@ function add({
 
 function expectLog(logText: string, logFilter?: (logEntry: LogEntry) => boolean) {
   const logsFound = logEntries.filter((logEntry) => {
-    if (stripAnsi(logEntry.logText).includes(logText)) {
+    if (removeAnsi(logEntry).logText.includes(logText)) {
       logEntry.isNotFailure = true
       return true
     }
     return false
   })
-  const logsFoundWithFilter = logsFound.filter((logEntry) => logFilter?.(logEntry))
+  const logsFoundWithFilter = logsFound.filter((logEntry) => logFilter?.(removeAnsi(logEntry)))
   if (logsFoundWithFilter.length === 0) {
     if (logsFound.length === 0) {
       throw new Error(`The following log was expected but wasn't logged: "${logText}"`)
@@ -124,6 +124,14 @@ function expectLog(logText: string, logFilter?: (logEntry: LogEntry) => boolean)
       throw new Error(`The following log was logged as expected, but it didn't match the logFilter() you provided`)
     }
   }
+}
+
+function removeAnsi(logEntry: LogEntry): LogEntry {
+  const logEntryWithoutAnsi = {
+    ...logEntry,
+    logText: stripAnsi(logEntry.logText),
+  }
+  return logEntryWithoutAnsi
 }
 
 function getTimestamp() {
