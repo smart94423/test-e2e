@@ -46,7 +46,7 @@ type TestInfo = {
 let testInfo: null | TestInfo = null
 
 function getCurrentTest(): TestInfo {
-  assert(testInfo)
+  if (!testInfo) throw new Error('testInfo missing')
   return testInfo
 }
 function getCurrentTestOptional(): null | TestInfo {
