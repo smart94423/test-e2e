@@ -34,7 +34,7 @@ async function runAll(filter: null | FindFilter) {
     assert(failedTestFiles.length > 0)
     throw new Error(
       [
-        'Following test files failed, see logs above for more information.',
+        'Following test files failed, see logs above for more information (search for [TEST_FAILURE]).',
         ...failedTestFiles.map((testFile) => `  ${testFile}`),
       ].join('\n')
     )

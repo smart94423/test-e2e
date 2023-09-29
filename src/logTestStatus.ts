@@ -22,7 +22,7 @@ function logFail(reason: string, isFinalAttempt: boolean) {
   }
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
-  const msg = `Test ${isFinalAttempt ? FAIL : 'failed'} because ${reason}, see below.`
+  const msg = `Test ${isFinalAttempt ? FAIL : 'failed'} because ${reason}, see below. [TEST_FAILURE]`
   console.log(color(msg))
 }
 function logStatus(isFail: boolean, warning?: string) {
