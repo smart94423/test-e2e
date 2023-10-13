@@ -42,29 +42,30 @@ async function runAll(filter: null | FindFilter) {
 }
 
 async function runTestFiles(testFiles: string[], browser: Browser): Promise<string[]> {
-  const failedFirstAttempt: string[] = []
+  // First attempt
+  let failedTestFiles: string[] = []
   for (const testFile of testFiles) {
     const success = await buildAndTest(testFile, browser, false)
     if (!success) {
-      failedFirstAttempt.push(testFile)
+      failedTestFiles.push(testFile)
       if (cliConfig.bail) {
-        return failedFirstAttempt
+        return failedTestFiles
       }
     }
   }
   if (!isCI()) {
-    return failedFirstAttempt
+    return failedTestFiles
   }
 
-  const failedSecondAttempt: string[] = []
-  for (const testFile of failedFirstAttempt) {
+  // Second attempt
+  for (const testFile of failedTestFiles) {
     const success = await buildAndTest(testFile, browser, true)
-    if (!success) {
-      failedSecondAttempt.push(testFile)
+    if (success) {
+      failedTestFiles = failedTestFiles.filter(t => t !== testFile)
     }
   }
 
-  return failedSecondAttempt
+  return failedTestFiles
 }
 
 async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
