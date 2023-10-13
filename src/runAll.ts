@@ -53,21 +53,21 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
       }
     }
   }
+
   if (!isCI()) {
     return failedTestFiles
-  }
-
-  // Second & third attempt
-  for (let n = 1; n <= 2; n++) {
-    for (const testFile of failedTestFiles) {
-      const success = await buildAndTest(testFile, browser, true)
-      if (success) {
-        failedTestFiles = failedTestFiles.filter((t) => t !== testFile)
+  } else {
+    // Second & third attempt
+    for (let n = 1; n <= 2; n++) {
+      for (const testFile of failedTestFiles) {
+        const success = await buildAndTest(testFile, browser, true)
+        if (success) {
+          failedTestFiles = failedTestFiles.filter((t) => t !== testFile)
+        }
       }
     }
+    return failedTestFiles
   }
-
-  return failedTestFiles
 }
 
 async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
