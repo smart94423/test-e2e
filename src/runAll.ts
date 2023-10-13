@@ -57,11 +57,13 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
     return failedTestFiles
   }
 
-  // Second attempt
-  for (const testFile of failedTestFiles) {
-    const success = await buildAndTest(testFile, browser, true)
-    if (success) {
-      failedTestFiles = failedTestFiles.filter(t => t !== testFile)
+  // Second & third attempt
+  for (let n = 1; n <= 2; n++) {
+    for (const testFile of failedTestFiles) {
+      const success = await buildAndTest(testFile, browser, true)
+      if (success) {
+        failedTestFiles = failedTestFiles.filter((t) => t !== testFile)
+      }
     }
   }
 
