@@ -45,10 +45,10 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
   let failedTestFiles: string[] = []
   let doNotRetry = false
   for (const testFile of testFiles) {
-    const success = await buildAndTest(testFile, browser, false)
+    const { success, isFlaky } = await buildAndTest(testFile, browser, false)
     if (!success) {
       failedTestFiles.push(testFile)
-      if (!isFlaky()) {
+      if (!isFlaky) {
         doNotRetry = true
       }
       if (cliOptions.bail) {
@@ -68,7 +68,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
     for (let i = 0; i <= 1; i++) {
       console.log((i === 0 ? 'SECOND' : 'THIRD') + '_ATTEMPT')
       for (const testFile of failedTestFiles) {
-        const success = await buildAndTest(testFile, browser, i === 1)
+        const { success } = await buildAndTest(testFile, browser, i === 1)
         if (success) {
           failedTestFiles = failedTestFiles.filter((t) => t !== testFile)
         }
@@ -78,19 +78,13 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
   }
 }
 
-function isFlaky() {
-  const testInfo = getCurrentTest()
-  // Set when user calls run()
-  assert(testInfo.runInfo)
-  return testInfo.runInfo.isFlaky
-}
-
-async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: boolean): Promise<boolean> {
+async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: boolean) {
   assert(testFile.endsWith('.ts'))
   const testFileJs = testFile.replace('.ts', '.mjs')
   assert(testFileJs.endsWith('.mjs'))
   const cleanBuild = await buildTs(testFile, testFileJs)
   setCurrentTest(testFile)
+
   logBoot()
   let execErr: unknown
   try {
@@ -104,7 +98,10 @@ async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: 
   if (execErr) {
     logFail(`an error was thrown while executing the file ${testFile}`, true)
     logError(execErr)
-    return false
+    return {
+      success: false,
+      isFlaky: false,
+    }
   }
 
   // When user calls skip()
@@ -112,31 +109,38 @@ async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: 
   if (testInfo.skipped) {
     assertSkipUsage(testInfo)
     logWarn(testInfo.skipped.reason)
-    return true
+    return {
+      success: true,
+      isFlaky: false,
+    }
   } else {
     // Set when user calls run() or runCommandThatTerminates()
     assert(testInfo.runInfo)
   }
+  const { isFlaky } = testInfo.runInfo
 
   // When user calls run runCommandThatTerminates()
   if (testInfo.runInfo.isRunCommandThatTerminates) {
     assertUsage(!testInfo.tests, "Can't call test() when calling runCommandThatTerminates()")
     assertUsage(!testInfo.startServer, "Can't call run() when calling runCommandThatTerminates()")
     logPass()
-    return true
+    return {
+      success: true,
+      isFlaky,
+    }
   }
 
-  const success = await runServerAndTests(browser, isThirdAttempt)
+  const success = await runServerAndTests(browser, isThirdAttempt, isFlaky)
   setCurrentTest(null)
-  return success
+  return { success, isFlaky }
 }
 
-async function runServerAndTests(browser: Browser, isThirdAttempt: boolean): Promise<boolean> {
+async function runServerAndTests(browser: Browser, isThirdAttempt: boolean, isFlaky: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
   assert(testInfo.startServer)
   assert(testInfo.terminateServer)
 
-  const isFinalAttempt: boolean = isThirdAttempt || !isFlaky()
+  const isFinalAttempt: boolean = isThirdAttempt || !isFlaky
 
   const page = await browser.newPage()
   testInfo.page = page
