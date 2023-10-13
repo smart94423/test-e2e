@@ -58,7 +58,8 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
     return failedTestFiles
   } else {
     // Second & third attempt
-    for (let n = 1; n <= 2; n++) {
+    for (let i = 0; i <= 1; i++) {
+      console.log((i === 0 ? 'SECOND' : 'THIRD') + '_ATTEMPT')
       for (const testFile of failedTestFiles) {
         const success = await buildAndTest(testFile, browser, true)
         if (success) {
