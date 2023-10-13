@@ -5,7 +5,6 @@ import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
 import { assert, assertUsage, cliOptions, humanizeTime, isCI, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
-import { isParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
 import { getBrowser } from './getBrowser'
 import { buildTs } from './buildTs'
@@ -44,14 +43,22 @@ async function runAll(filter: null | FindFilter) {
 async function runTestFiles(testFiles: string[], browser: Browser): Promise<string[]> {
   // First attempt
   let failedTestFiles: string[] = []
+  let doNotRetry = false
   for (const testFile of testFiles) {
     const success = await buildAndTest(testFile, browser, false)
     if (!success) {
       failedTestFiles.push(testFile)
+      if (!isFlaky()) {
+        doNotRetry = true
+      }
       if (cliOptions.bail) {
         return failedTestFiles
       }
     }
+  }
+
+  if (doNotRetry) {
+    return failedTestFiles
   }
 
   if (!isCI()) {
@@ -61,7 +68,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
     for (let i = 0; i <= 1; i++) {
       console.log((i === 0 ? 'SECOND' : 'THIRD') + '_ATTEMPT')
       for (const testFile of failedTestFiles) {
-        const success = await buildAndTest(testFile, browser, true)
+        const success = await buildAndTest(testFile, browser, i === 1)
         if (success) {
           failedTestFiles = failedTestFiles.filter((t) => t !== testFile)
         }
@@ -71,7 +78,14 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
   }
 }
 
-async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
+function isFlaky() {
+  const testInfo = getCurrentTest()
+  // Set when user calls run()
+  assert(testInfo.runInfo)
+  return testInfo.runInfo.isFlaky
+}
+
+async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: boolean): Promise<boolean> {
   assert(testFile.endsWith('.ts'))
   const testFileJs = testFile.replace('.ts', '.mjs')
   assert(testFileJs.endsWith('.mjs'))
@@ -112,25 +126,17 @@ async function buildAndTest(testFile: string, browser: Browser, isSecondAttempt:
     return true
   }
 
-  const success = await runServerAndTests(browser, isSecondAttempt)
+  const success = await runServerAndTests(browser, isThirdAttempt)
   setCurrentTest(null)
   return success
 }
 
-async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Promise<boolean> {
+async function runServerAndTests(browser: Browser, isThirdAttempt: boolean): Promise<boolean> {
   const testInfo = getCurrentTest()
-  // Set when user calls run()
-  assert(testInfo.runInfo)
   assert(testInfo.startServer)
   assert(testInfo.terminateServer)
 
-  const isFinalAttempt: boolean = isSecondAttempt || !testInfo.runInfo.isFlaky
-
-  const abortMaybe = () => {
-    if (isFinalAttempt && isParallelCI()) {
-      process.exit(1)
-    }
-  }
+  const isFinalAttempt: boolean = isThirdAttempt || !isFlaky()
 
   const page = await browser.newPage()
   testInfo.page = page
@@ -139,7 +145,6 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
     await testInfo.startServer()
   } catch (err) {
     logFailure(err, 'an error occurred while starting the server', isFinalAttempt)
-    abortMaybe()
     return false
   }
 
@@ -162,8 +167,6 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
 
   if (success) {
     logPass()
-  } else {
-    abortMaybe()
   }
   Logs.clearLogs()
 
@@ -171,7 +174,7 @@ async function runServerAndTests(browser: Browser, isSecondAttempt: boolean): Pr
 }
 
 async function runTests(testInfo: TestInfo, isFinalAttempt: boolean): Promise<boolean> {
-  // Set when user calls `run()`
+  // Set when user calls run()
   assert(testInfo.runInfo)
   assert(testInfo.afterEach)
   const tests =
