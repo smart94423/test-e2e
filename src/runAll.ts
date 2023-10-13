@@ -3,7 +3,7 @@ export { runAll }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, cliConfig, humanizeTime, isCI, isWindows, logProgress } from './utils'
+import { assert, assertUsage, cliOptions, humanizeTime, isCI, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import { isParallelCI } from './parallel-ci'
 import { setCurrentTest } from './getCurrentTest'
@@ -48,7 +48,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
     const success = await buildAndTest(testFile, browser, false)
     if (!success) {
       failedTestFiles.push(testFile)
-      if (cliConfig.bail) {
+      if (cliOptions.bail) {
         return failedTestFiles
       }
     }

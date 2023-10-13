@@ -1,4 +1,4 @@
-export { cliConfig }
+export { cliOptions }
 
 import { check, prepare, validate } from './parseCli'
 
@@ -13,10 +13,10 @@ const exclude = check('--exclude')
 */
 validate()
 
-const cliConfig = {
+const cliOptions = {
   verbose,
   // To inspect a specific test: `$ touch examples/some-example/INSPECT`
   inspect: inspect || !!process.env.TEST_INSPECT,
   debugEsbuild,
-  bail
+  bail,
 }

@@ -3,7 +3,7 @@ export { sourceMaps }
 
 import esbuild from 'esbuild'
 import fs from 'fs'
-import { cliConfig } from './utils'
+import { cliOptions } from './utils'
 
 const sourceMaps: Record<string, string> = {}
 
@@ -26,7 +26,7 @@ async function buildTs(entry: string, outfile: string): Promise<() => void> {
     fs.unlinkSync(sourceMapFile)
   }
   const clean = () => {
-    if (cliConfig.debugEsbuild) {
+    if (cliOptions.debugEsbuild) {
       return
     }
     fs.unlinkSync(`${outfile}`)

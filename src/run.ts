@@ -1,7 +1,7 @@
 export { run }
 
 import type { ConsoleMessage } from 'playwright-chromium'
-import { sleep, logProgress, cliConfig, isLinux, runCommandLongRunning } from './utils'
+import { sleep, logProgress, cliOptions, isLinux, runCommandLongRunning } from './utils'
 import { assert } from './utils'
 import { Logs } from './Logs'
 import { editFileAssertReverted, editFileRevert } from './editFile'
@@ -16,7 +16,7 @@ function run(
     additionalTimeout = 0,
     serverIsReadyMessage,
     serverIsReadyDelay = 1000,
-    inspect = cliConfig.inspect,
+    inspect = cliOptions.inspect,
     cwd,
     doNotFailOnWarning,
     serverUrl,
@@ -48,7 +48,7 @@ function run(
 
   if (inspect) {
     Logs.logEagerly = 'all'
-  } else if (cliConfig.verbose) {
+  } else if (cliOptions.verbose) {
     Logs.logEagerly = 'logs'
   }
 
