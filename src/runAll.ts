@@ -12,6 +12,7 @@ import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
 import { hasFail, logBoot, logFail, logPass, logWarn } from './logTestStatus'
+import pc from 'picocolors'
 
 async function runAll(filter: null | FindFilter) {
   await loadConfig()
@@ -32,10 +33,14 @@ async function runAll(filter: null | FindFilter) {
     assert(hasFailedTestFile && hasFailLog)
     assert(failedTestFiles.length > 0)
     throw new Error(
-      [
-        'Following test files failed, see logs above for more information (search for [TEST_FAILURE]).',
-        ...failedTestFiles.map((testFile) => `  ${testFile}`),
-      ].join('\n')
+      pc.red(
+        pc.bold(
+          [
+            'Following test files failed, see logs above for more information (search for [TEST_FAILURE]).',
+            ...failedTestFiles.map((testFile) => `  ${testFile}`),
+          ].join('\n')
+        )
+      )
     )
   }
 }
