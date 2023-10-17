@@ -36,7 +36,7 @@ async function runAll(filter: null | FindFilter) {
       pc.red(
         pc.bold(
           [
-            'Following test files failed, see logs above for more information (search for [TEST_FAILURE]).',
+            'Following test files failed, see logs above for more information (search for [TEST_FAILURE]):',
             ...failedTestFiles.map((testFile) => `  ${testFile}`),
           ].join('\n')
         )
@@ -71,7 +71,7 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
   } else {
     // Second & third attempt
     for (let i = 0; i <= 1; i++) {
-      console.log((i === 0 ? 'SECOND' : 'THIRD') + '_ATTEMPT')
+      console.log('[' + (i === 0 ? 'SECOND' : 'THIRD') + '_ATTEMPT]')
       for (const testFile of failedTestFiles) {
         const { success } = await buildAndTest(testFile, browser, i === 1)
         if (success) {
