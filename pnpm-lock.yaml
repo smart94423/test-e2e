@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@brillout/part-regex':
-    specifier: ^0.1.2
-    version: 0.1.2
+    specifier: ^0.1.3
+    version: 0.1.3
   chai:
     specifier: ^4.3.6
     version: 4.3.6
@@ -64,8 +64,8 @@ devDependencies:
 
 packages:
 
-  /@brillout/part-regex@0.1.2:
-    resolution: {integrity: sha512-3b/5PLhJ4xMF/cyY1aJXIMQT0TONFFgUX3tH2wfdrHe78OYe8igl0iaHkJ3kzgN0V+x562Of2AoMwThtLaAj5Q==}
+  /@brillout/part-regex@0.1.3:
+    resolution: {integrity: sha512-ZyqtOYHvQs3Ca0xt9fb2OlGzCrKwXtMcAATDObkFmI4jKuObEORjWrqAslWTelquXlyEYLz7h1nt6jp50LDyJA==}
     dev: false
 
   /@esbuild/android-arm64@0.16.5:
