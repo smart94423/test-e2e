@@ -6,15 +6,29 @@ import pixelmatch from 'pixelmatch'
 import { PNG, type PNGWithMetadata } from 'pngjs'
 import fs from 'fs'
 import path from 'path'
-import { assert, sleep } from './utils'
+import { assert, isCI, sleep } from './utils'
 import { getCurrentTest, getCwd } from './getCurrentTest'
 import { expect } from './chai/expect'
+import pc from '@brillout/picocolors'
 
 async function testScreenshotFixture({
   screenshotFixturePath,
-}: { screenshotFixturePath?: string } = {}): Promise<void> {
+  doNotTestLocally,
+}: {
+  screenshotFixturePath?: string
+  /** Only test screenshot in CI environment (e.g. GitHub Actions) */
+  doNotTestLocally?: true
+} = {}): Promise<void> {
   const pngPaths = getPngPaths()
   const pngFixturPath = screenshotFixturePath || pngPaths.pngFixturPath
+  if (doNotTestLocally && isCI()) {
+    console.log(
+      `${pc.blue(
+        pc.bold('INFO')
+      )} screenshot test ${pngFixturPath} skipped because running test locally (i.e. not in a CI environment)`
+    )
+    return
+  }
   if (!fs.existsSync(pngFixturPath)) {
     const pngActual = await takeScreenshot()
     const fileContent = PNG.sync.write(pngActual)
