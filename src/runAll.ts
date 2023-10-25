@@ -37,7 +37,7 @@ async function runAll(filter: null | FindFilter) {
         pc.bold(
           [
             'Following test files failed, see logs above for more information (search for [TEST_FAILURE]):',
-            ...failedTestFiles.map((testFile) => `  ${testFile}`),
+            ...failedTestFiles.map((testFile) => `❌ ${pc.bold(testFile)}`),
           ].join('\n')
         )
       )
