@@ -6,7 +6,7 @@ export { hasFail }
 
 import { getCurrentTest } from './getCurrentTest'
 import { assert, isTTY } from './utils'
-import pc from 'picocolors'
+import pc from '@brillout/picocolors'
 
 function logPass() {
   logStatus(false)

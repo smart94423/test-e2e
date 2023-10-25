@@ -18,7 +18,7 @@
     "esbuild": "^0.16.5",
     "fast-glob": "^3.2.12",
     "node-fetch": "^2.6.1",
-    "picocolors": "^1.0.0",
+    "@brillout/picocolors": "^1.0.9",
     "pixelmatch": "^5.3.0",
     "playwright-chromium": "^1.22.2",
     "pngjs": "^6.0.0",

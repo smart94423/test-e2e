@@ -1,6 +1,6 @@
 export { logSection }
 
-import pc from 'picocolors'
+import pc from '@brillout/picocolors'
 
 function logSection(sectionTitle: string) {
   const title = `vvvvvv ${sectionTitle} vvvvvv`

@@ -12,7 +12,7 @@ import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
 import { hasFail, logBoot, logFail, logPass, logWarn } from './logTestStatus'
-import pc from 'picocolors'
+import pc from '@brillout/picocolors'
 
 async function runAll(filter: null | FindFilter) {
   await loadConfig()

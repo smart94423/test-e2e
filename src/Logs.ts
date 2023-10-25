@@ -10,7 +10,7 @@ export const Logs = {
 export type { LogSource }
 
 import { assert, ensureNewTerminalLine, isWindows } from './utils'
-import pc from 'picocolors'
+import pc from '@brillout/picocolors'
 import { getCurrentTestOptional } from './getCurrentTest'
 import { logSection } from './logSection'
 import { isTolerateError } from './Logs/isTolerateError'
