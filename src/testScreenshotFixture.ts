@@ -21,7 +21,7 @@ async function testScreenshotFixture({
 } = {}): Promise<void> {
   const pngPaths = getPngPaths()
   const pngFixturPath = screenshotFixturePath || pngPaths.pngFixturPath
-  if (doNotTestLocally && isCI()) {
+  if (doNotTestLocally && !isCI()) {
     console.log(
       `${pc.blue(
         pc.bold('INFO')
