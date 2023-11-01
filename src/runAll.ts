@@ -11,7 +11,7 @@ import { buildTs } from './buildTs'
 import { findTestFiles } from './findTestFiles'
 import { loadConfig } from './getConfig'
 import { logError } from './logError'
-import { hasFail, logBoot, logFail, logPass, logWarn } from './logTestStatus'
+import { hasFail, logBoot, logFail, logPass, logWarn, TEST_FAIL } from './logTestStatus'
 import pc from '@brillout/picocolors'
 
 async function runAll(filter: null | FindFilter) {
@@ -36,7 +36,7 @@ async function runAll(filter: null | FindFilter) {
       pc.red(
         pc.bold(
           [
-            'Following test files failed, see logs above for more information (search for [TEST_FAILURE]):',
+            `Following test files failed, see logs above for more information (search for [${TEST_FAIL}]):`,
             ...failedTestFiles.map((testFile) => `❌ ${pc.bold(testFile)}`),
           ].join('\n')
         )

@@ -3,6 +3,7 @@ export { logWarn }
 export { logFail }
 export { logBoot }
 export { hasFail }
+export const TEST_FAIL = 'TEST_FAIL'
 
 import { getCurrentTest } from './getCurrentTest'
 import { assert, isTTY } from './utils'
@@ -22,7 +23,7 @@ function logFail(reason: string, isFinalAttempt: boolean) {
   }
   const { FAIL } = getStatusTags()
   const color = (s: string) => pc.red(pc.bold(s))
-  const msg = `Test ${isFinalAttempt ? FAIL : 'failed'} because ${reason}, see below. [TEST_FAILURE]`
+  const msg = `Test ${isFinalAttempt ? FAIL : 'failed'} because ${reason}, see below. [${TEST_FAIL}]`
   console.log(color(msg))
 }
 function logStatus(isFail: boolean, warning?: string) {
