@@ -1,4 +1,5 @@
 export { fsWindowsBugWorkaround }
+export { fsWindowsBugWorkaroundPrefix }
 
 const fsWindowsBugWorkaroundPrefix = 'file://'
 
