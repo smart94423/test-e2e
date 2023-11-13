@@ -31,7 +31,9 @@ function initUserExitHandler() {
   })
 }
 
-// Much simpler alternative: https://github.com/brillout/vite-plugin-ssr/blob/77b1b0e8b6c1ed4efe3e3039f7c0b23a00651663/vite-plugin-ssr/node/plugin/plugins/importUserCode/v1-design/transpileAndLoadFile.ts#L200-L208
+// This mechanism seems necessary for the source map to apply for errors that happen a long time after the build file, which contains the inline source map, is removed.
+//  - The much simpler alternative used by Vike doesn't seem to work: https://github.com/brillout/vite-plugin-ssr/blob/77b1b0e8b6c1ed4efe3e3039f7c0b23a00651663/vite-plugin-ssr/node/plugin/plugins/importUserCode/v1-design/transpileAndLoadFile.ts#L200-L208
+//  - Failed attempt to make the simpler alternative work: https://github.com/brillout/test-e2e/commit/681abd19459b8c7d3ade9363ba32be86e3fdcb53
 function initSourceMap() {
   sourceMapSupport.install({
     retrieveSourceMap: function (source) {
