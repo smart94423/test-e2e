@@ -85,7 +85,8 @@ async function runTestFiles(testFiles: string[], browser: Browser): Promise<stri
 
 async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: boolean) {
   assert(testFile.endsWith('.ts'))
-  const testFileJs = testFile.replace('.ts', '.mjs')
+  const cacheBuster: number = Date.now()
+  const testFileJs = testFile.replace('.ts', `.${cacheBuster}.mjs`)
   assert(testFileJs.endsWith('.mjs'))
   const cleanBuild = await buildTs(testFile, testFileJs)
   setCurrentTest(testFile)
@@ -93,7 +94,7 @@ async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: 
   logBoot()
   let execErr: unknown
   try {
-    await import(fsWindowsBugWorkaround(testFileJs) + `?cacheBuster=${Date.now()}`)
+    await import(fsWindowsBugWorkaround(testFileJs))
   } catch (err) {
     assert(err)
     execErr = err
