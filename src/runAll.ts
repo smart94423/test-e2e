@@ -3,7 +3,7 @@ export { runAll }
 import type { Browser } from 'playwright-chromium'
 import { getCurrentTest, type TestInfo } from './getCurrentTest'
 import { Logs } from './Logs'
-import { assert, assertUsage, cliOptions, humanizeTime, isCI, isWindows, logProgress } from './utils'
+import { assert, assertUsage, cliOptions, humanizeTime, isCI, isObject, isWindows, logProgress } from './utils'
 import { type FindFilter, fsWindowsBugWorkaround } from './utils'
 import { setCurrentTest } from './getCurrentTest'
 import { getBrowser } from './getBrowser'
@@ -13,6 +13,7 @@ import { loadConfig } from './getConfig'
 import { logError } from './logError'
 import { hasFail, logBoot, logFail, logPass, logWarn, TEST_FAIL } from './logTestStatus'
 import pc from '@brillout/picocolors'
+import 'source-map-support/register.js'
 
 async function runAll(filter: null | FindFilter) {
   await loadConfig()
@@ -88,7 +89,7 @@ async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: 
   const cacheBuster: number = Date.now()
   const testFileJs = testFile.replace('.ts', `.${cacheBuster}.mjs`)
   assert(testFileJs.endsWith('.mjs'))
-  const cleanBuild = await buildTs(testFile, testFileJs)
+  const removeBuildFile = await buildTs(testFile, testFileJs)
   setCurrentTest(testFile)
 
   logBoot()
@@ -96,10 +97,12 @@ async function buildAndTest(testFile: string, browser: Browser, isThirdAttempt: 
   try {
     await import(fsWindowsBugWorkaround(testFileJs))
   } catch (err) {
+    // Ensure the source map is loaded before we remove testFileJs contains the inline source map
+    installSourceMap(err)
     assert(err)
     execErr = err
   } finally {
-    cleanBuild()
+    removeBuildFile()
   }
   if (execErr) {
     logFail(`an error was thrown while executing the file ${testFile}`, true)
@@ -280,5 +283,15 @@ function assertSkipUsage(testInfo: TestInfo) {
   {
     const err = 'You cannot call test() after calling skip()'
     assertUsage(testInfo.tests === undefined, err)
+  }
+}
+
+// This tiggers Error.prepareStackTrace() which is needed for the npm package 'source-map-support': the Error.prepareStackTrace() hook of 'source-map-support' needs to be called before the file containing the source map is removed.
+function installSourceMap(err: unknown) {
+  if (isObject(err)) {
+    // Accessing err.stack triggers prepareStackTrace()
+    const { stack } = err
+    // Ensure no compiler removes the line above
+    if (1 + 1 === 3) console.log('I_AM_NEVER_SHOWN' + stack)
   }
 }
