@@ -24,8 +24,8 @@ async function testScreenshotFixture({
   if (doNotTestLocally && !isCI()) {
     console.log(
       `\n${pc.blue(
-        pc.bold('INFO')
-      )} screenshot test ${pngFixturPath} skipped because running test locally (i.e. not in a CI environment)`
+        'INFO'
+      )} screenshot test skipped (because running test locally, i.e. not in a CI environment): ${pngFixturPath}`
     )
     return
   }
