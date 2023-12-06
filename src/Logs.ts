@@ -109,23 +109,22 @@ function add({
 }
 
 function expectLog(logText: string, logFilter?: (logEntry: LogEntry) => boolean) {
-  const logsFound = logEntries.filter((logEntry) => {
+  let logsFound = logEntries.filter((logEntry) => {
     if (removeAnsi(logEntry).logText.includes(logText)) {
       logEntry.isNotFailure = true
       return true
     }
     return false
   })
-  let logsFoundWithFilter = logsFound
-  if (logFilter) {
-    logsFoundWithFilter = logsFoundWithFilter.filter((logEntry) => logFilter(removeAnsi(logEntry)))
+  if (logsFound.length === 0) {
+    throw new Error(`The following log was expected but it wasn't logged: "${logText}"`)
   }
-  if (logsFoundWithFilter.length === 0) {
-    if (logsFound.length === 0) {
-      throw new Error(`The following log was expected but it wasn't logged: "${logText}"`)
-    } else {
-      throw new Error(`The following log was logged as expected, but it didn't match the logFilter() you provided`)
-    }
+  if (!logFilter) return
+  logsFound = logsFound.filter((logEntry) => logFilter(removeAnsi(logEntry)))
+  if (logsFound.length === 0) {
+    throw new Error(
+      `The following log was logged as expected, but it didn't match the logFilter() you provided: "${logText}"`
+    )
   }
 }
 
