@@ -21,7 +21,10 @@ function getConfig(): Config {
 
 async function loadConfig(): Promise<void> {
   const configFilePath = find()
-  assertUsage(configFilePath, `${configFileName} not found`)
+  if (!configFilePath) {
+    config = {}
+    return
+  }
   const configFileExports = (await import(fsWindowsBugWorkaround(configFilePath))) as Record<string, unknown>
   assertUsage('default' in configFileExports, `${configFileName} should have a default export`)
   assertConfig(configFileExports.default)
